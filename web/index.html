@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>NutriTrack - CRUD (MVC + DAO)</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="container">
+    <h1>NutriTrack</h1>
+    <p>Site mínimo para gerenciar valor nutricional consumido (CRUD em arquivos binários).</p>
+  </header>
+
+  <main class="container grid">
+    <section class="card">
+      <h2>Usuários</h2>
+      <p>CRUD de usuários (nome, email, data de nascimento e telefones).</p>
+      <ul>
+        <li>Campos: string, data, string multivalorada (telefones)</li>
+        <li>Arquivo: <code>./dados/usuario/usuario.db</code></li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Alimentos</h2>
+      <p>CRUD de alimentos (nome, marca, macros e tags).</p>
+      <ul>
+        <li>Campos: string, float, string multivalorada (tags)</li>
+        <li>Arquivo: <code>./dados/alimento/alimento.db</code></li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Refeições</h2>
+      <p>CRUD de refeições (data, tipo, observação).</p>
+      <ul>
+        <li>Campos: data, string</li>
+        <li>Arquivo: <code>./dados/refeicao/refeicao.db</code></li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Consumos</h2>
+      <p>Tabela intermediária (N:N) entre Refeição e Alimento.</p>
+      <ul>
+        <li>Campos: FK refeicaoId, FK alimentoId, float (gramas)</li>
+        <li>Arquivo: <code>./dados/consumo/consumo.db</code></li>
+      </ul>
+    </section>
+
+    <section class="card full">
+      <h2>Como testar</h2>
+      <ol>
+        <li>Compile: <code>javac -d out src/app/**/*.java</code></li>
+        <li>Execute: <code>java -cp out app.Main</code></li>
+        <li>Veja os arquivos binários gerados em <code>./dados</code></li>
+      </ol>
+      <p class="hint">Esta interface é propositalmente mínima (HTML/CSS). A lógica está em Controller/DAO.</p>
+    </section>
+  </main>
+
+  <footer class="container footer">
+    <small>Projeto exemplo — MVC + DAO (arquivo binário com cabeçalho e lápide).</small>
+  </footer>
+</body>
+</html>
