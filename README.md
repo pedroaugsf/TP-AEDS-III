@@ -8,7 +8,7 @@ binários** (cabeçalho + lápide + lista de espaços livres) e **índices em Ha
 
 ---
 
-## ✨ O que está implementado
+## O que está implementado
 
 ### Fase 1
 - MVC + DAO em Java puro
@@ -28,7 +28,7 @@ binários** (cabeçalho + lápide + lista de espaços livres) e **índices em Ha
 
 ---
 
-## 📂 Estrutura
+##  Estrutura
 
 ```
 TP-AEDS-III/
@@ -59,7 +59,7 @@ TP-AEDS-III/
 
 ---
 
-## 🚀 Como executar
+##  Como executar
 
 ### Pré-requisitos
 - **JDK 17+** (testado com OpenJDK 21) no PATH
@@ -93,12 +93,12 @@ javac -d out $(find src -name "*.java")
 java -cp out app.Servidor   # ou app.ConsoleApp / app.Main
 ```
 
-> 💡 Para começar do zero apague a pasta `./dados/` (os arquivos serão recriados).
-> 💡 Para forçar reconstrução dos índices apague apenas os `*.idx.*.db` — eles serão recriados a partir dos `.db` de dados na próxima execução.
+>  Para começar do zero apague a pasta `./dados/` (os arquivos serão recriados).
+>  Para forçar reconstrução dos índices apague apenas os `*.idx.*.db` — eles serão recriados a partir dos `.db` de dados na próxima execução.
 
 ---
 
-## 🌐 API REST (servidor)
+##  API REST (servidor)
 
 | Método | Rota | Descrição |
 |---|---|---|
@@ -114,9 +114,9 @@ java -cp out app.Servidor   # ou app.ConsoleApp / app.Main
 
 ---
 
-## 📘 Documentação técnica
+##  Documentação técnica
 
-Abra [`web/documentacao.html`](web/documentacao.html) (ou clique em "📘 Documentação"
+Abra [`web/documentacao.html`](web/documentacao.html) (ou clique em " Documentação"
 na barra do front-end). O documento inclui:
 
 - Descrição do problema, objetivos e requisitos (Fase 1)
@@ -128,7 +128,7 @@ na barra do front-end). O documento inclui:
 
 ---
 
-## 🧪 Smoke test rápido (PowerShell, com servidor rodando)
+##  Smoke test rápido (PowerShell, com servidor rodando)
 
 ```powershell
 $u = irm -Method Post -Uri http://localhost:8080/api/usuario -ContentType 'application/json' `
@@ -145,5 +145,3 @@ irm http://localhost:8080/api/refeicao/$($r.id)/consumos
 ```
 
 ---
-
-## 📦 Repositório
