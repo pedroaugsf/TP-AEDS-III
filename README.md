@@ -147,4 +147,3 @@ irm http://localhost:8080/api/refeicao/$($r.id)/consumos
 ---
 
 ## 📦 Repositório
-O código está disponível no GitHub em <https://github.com/> *(repositório do grupo)*.
