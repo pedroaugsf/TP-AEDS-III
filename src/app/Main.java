@@ -36,7 +36,7 @@ public class Main {
 
         UsuarioController usuarioCtrl = new UsuarioController(usuarioDAO);
         AlimentoController alimentoCtrl = new AlimentoController(alimentoDAO);
-        RefeicaoController refeicaoCtrl = new RefeicaoController(refeicaoDAO, usuarioDAO);
+        RefeicaoController refeicaoCtrl = new RefeicaoController(refeicaoDAO, usuarioDAO, consumoDAO);
         ConsumoController consumoCtrl = new ConsumoController(consumoDAO, refeicaoDAO, alimentoDAO);
 
         try {

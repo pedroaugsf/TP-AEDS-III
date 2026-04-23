@@ -1,0 +1,837 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NutriTrack — Documentação (Padrão SBC)</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <style>
+    /* ===== Padrão SBC (simplificado) ===== */
+    @page { margin: 2.5cm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Times New Roman', Times, serif;
+      font-size: 12pt;
+      line-height: 1.5;
+      color: #000;
+      max-width: 21cm;
+      margin: 0 auto;
+      padding: 2.5cm;
+      background: #fff;
+    }
+
+    /* Título centralizado */
+    .titulo { text-align: center; margin-bottom: 0.5em; }
+    .titulo h1 { font-size: 16pt; margin-bottom: 0.3em; }
+    .titulo .subtitulo { font-size: 13pt; font-style: italic; margin-bottom: 0.8em; }
+    .autores { text-align: center; font-size: 11pt; margin-bottom: 1.5em; }
+    .autores p { margin: 0.1em 0; }
+
+    /* Abstract / Resumo */
+    .resumo {
+      font-size: 11pt;
+      margin: 1.5em 2em;
+      text-align: justify;
+    }
+    .resumo strong { font-size: 12pt; }
+
+    /* Seções */
+    h2 {
+      font-size: 14pt;
+      margin-top: 1.5em;
+      margin-bottom: 0.5em;
+    }
+    h3 {
+      font-size: 12pt;
+      margin-top: 1em;
+      margin-bottom: 0.3em;
+    }
+    p, li { text-align: justify; margin-bottom: 0.5em; }
+    ul, ol { margin-left: 2em; margin-bottom: 0.8em; }
+
+    /* Tabelas */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.8em 0;
+      font-size: 11pt;
+    }
+    th, td {
+      border: 1px solid #333;
+      padding: 4px 8px;
+      text-align: left;
+    }
+    th { background: #eee; font-weight: bold; }
+
+    /* Código */
+    code {
+      font-family: 'Courier New', monospace;
+      font-size: 10pt;
+      background: #f4f4f4;
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+    pre {
+      background: #f4f4f4;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 10pt;
+      margin: 0.5em 0 1em;
+    }
+
+    /* Diagramas */
+    .diagrama {
+      text-align: center;
+      margin: 1em 0;
+      page-break-inside: avoid;
+    }
+    .diagrama .mermaid svg { max-width: 100%; height: auto; }
+    .legenda {
+      font-size: 10pt;
+      font-style: italic;
+      text-align: center;
+      margin-top: 0.3em;
+      color: #555;
+    }
+
+    /* Referências */
+    .referencias { font-size: 11pt; }
+    .referencias li { margin-bottom: 0.3em; }
+
+    @media print {
+      body { padding: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ================================================================ -->
+<!-- TÍTULO E AUTORES -->
+<!-- ================================================================ -->
+<div class="titulo">
+  <h1>NutriTrack: Sistema de Gerenciamento de Consumo Nutricional com Persistência em Arquivos Binários</h1>
+  <p class="subtitulo">Trabalho Prático — AED III (Fases 1 e 2)</p>
+</div>
+
+<div class="autores">
+  <p><strong>Componentes do Grupo:</strong></p>
+  <p>Pedro Augusto Silva Ferreira, Luis Felipe Almeida Rodrigues</p>
+  <p>Pontifícia Universidade Católica de Minas Gerais</p>
+  <p>Instituto de Ciências Exatas e Informática</p>
+</div>
+
+<!-- ================================================================ -->
+<!-- RESUMO -->
+<!-- ================================================================ -->
+<div class="resumo">
+  <strong>Resumo.</strong> Este documento descreve o NutriTrack, um sistema para cadastro e
+  gerenciamento de usuários, alimentos, refeições e registro de consumo nutricional.
+  O sistema implementa operações CRUD completas com persistência em arquivos binários,
+  utilizando cabeçalho com controle de ID sequencial e exclusão lógica por lápide,
+  além de uma lista encadeada para reaproveitamento de espaço. A arquitetura segue o
+  padrão MVC + DAO em Java, com interface mínima em HTML/CSS.
+</div>
+
+<!-- ================================================================ -->
+<!-- 1. INTRODUÇÃO -->
+<!-- ================================================================ -->
+<h2>1. Introdução</h2>
+
+<p>
+  O acompanhamento nutricional é uma necessidade crescente. O NutriTrack foi desenvolvido
+  para permitir que um usuário registre suas refeições e os alimentos consumidos, com
+  informações detalhadas de macronutrientes (calorias, proteínas, carboidratos e gorduras).
+</p>
+<p>
+  O sistema foi construído em Java, seguindo o padrão MVC + DAO, e armazena todos os
+  dados exclusivamente em arquivos binários — sem uso de banco de dados relacional.
+  Cada arquivo possui cabeçalho com controle de ID auto-incremental e ponteiro para
+  uma lista encadeada de registros removidos (lápide), permitindo o reaproveitamento
+  de espaço em disco.
+</p>
+
+<!-- ================================================================ -->
+<!-- 2. DESCRIÇÃO DO PROBLEMA -->
+<!-- ================================================================ -->
+<h2>2. Descrição do Problema</h2>
+
+<p>
+  O sistema deve permitir o cadastro e gerenciamento de <strong>Usuários</strong>,
+  <strong>Alimentos</strong>, <strong>Refeições</strong> e <strong>Consumos</strong>,
+  possibilitando registrar quais alimentos foram consumidos em cada refeição e em
+  qual quantidade (em gramas). Os dados devem ser persistidos em arquivo binário com
+  cabeçalho e controle de exclusão lógica por lápide.
+</p>
+
+<!-- ================================================================ -->
+<!-- 3. OBJETIVO DO TRABALHO -->
+<!-- ================================================================ -->
+<h2>3. Objetivo do Trabalho</h2>
+
+<ul>
+  <li>Desenvolver um sistema CRUD completo para as 4 entidades do domínio nutricional.</li>
+  <li>Garantir persistência em arquivos binários (<code>.db</code>) com cabeçalho, lápide e reaproveitamento de espaço.</li>
+  <li>Implementar relacionamentos 1:N (Usuário → Refeição) e N:N (Refeição ↔ Alimento via Consumo).</li>
+  <li>Validar chaves estrangeiras (FK) na camada Controller.</li>
+  <li>Fornecer documentação com DCU, DER e Arquitetura.</li>
+</ul>
+
+<!-- ================================================================ -->
+<!-- 4. REQUISITOS FUNCIONAIS -->
+<!-- ================================================================ -->
+<h2>4. Requisitos Funcionais</h2>
+
+<table>
+  <tr><th>ID</th><th>Descrição</th></tr>
+  <tr><td>RF01</td><td>Cadastrar Usuário (nome, email, data de nascimento, telefones).</td></tr>
+  <tr><td>RF02</td><td>Cadastrar Alimento (nome, marca, macros por 100g, tags).</td></tr>
+  <tr><td>RF03</td><td>Criar Refeição vinculada a um Usuário (data, tipo, observação).</td></tr>
+  <tr><td>RF04</td><td>Registrar Consumo — associar Alimento a Refeição com quantidade em gramas.</td></tr>
+  <tr><td>RF05</td><td>Listar/consultar registros ativos (não removidos).</td></tr>
+  <tr><td>RF06</td><td>Excluir registros com exclusão lógica (lápide <code>'*'</code>).</td></tr>
+  <tr><td>RF07</td><td>Atualizar registros existentes (in-place ou realocação se maior).</td></tr>
+  <tr><td>RF08</td><td>Consultar registro por identificador (ID).</td></tr>
+</table>
+
+<!-- ================================================================ -->
+<!-- 5. REQUISITOS NÃO FUNCIONAIS -->
+<!-- ================================================================ -->
+<h2>5. Requisitos Não Funcionais</h2>
+
+<table>
+  <tr><th>ID</th><th>Descrição</th></tr>
+  <tr><td>RNF01</td><td>Interface mínima em HTML/CSS (pode ser estática).</td></tr>
+  <tr><td>RNF02</td><td>Persistência obrigatória em arquivos binários com cabeçalho.</td></tr>
+  <tr><td>RNF03</td><td>Exclusão lógica por lápide com lista de reaproveitamento.</td></tr>
+  <tr><td>RNF04</td><td>Documentação obrigatória (DCU + DER + Arquitetura).</td></tr>
+</table>
+
+<!-- ================================================================ -->
+<!-- 6. ATORES -->
+<!-- ================================================================ -->
+<h2>6. Atores</h2>
+
+<ul>
+  <li><strong>Usuário:</strong> cadastra seus dados, cria refeições e registra consumo de alimentos.</li>
+  <li><strong>Administrador:</strong> gerencia todos os cadastros (CRUD completo), incluindo exclusão e atualização.</li>
+</ul>
+
+<!-- ================================================================ -->
+<!-- 7. DIAGRAMA DE CASO DE USO (DCU) -->
+<!-- ================================================================ -->
+<h2>7. Diagrama de Caso de Uso (DCU)</h2>
+
+<div class="diagrama">
+  <pre class="mermaid">
+graph LR
+    subgraph Atores
+        U["🧑 Usuário"]
+        A["🔧 Administrador"]
+    end
+
+    subgraph Casos de Uso
+        UC1["RF01: Cadastrar Usuário"]
+        UC2["RF02: Cadastrar Alimento"]
+        UC3["RF03: Criar Refeição"]
+        UC4["RF04: Registrar Consumo"]
+        UC5["RF05: Listar Registros Ativos"]
+        UC6["RF06: Excluir Registro\n(lápide lógica)"]
+        UC7["RF07: Atualizar Registro"]
+        UC8["RF08: Consultar por ID"]
+    end
+
+    U --> UC1
+    U --> UC3
+    U --> UC4
+    U --> UC5
+    U --> UC8
+
+    A --> UC1
+    A --> UC2
+    A --> UC3
+    A --> UC4
+    A --> UC5
+    A --> UC6
+    A --> UC7
+    A --> UC8
+  </pre>
+  <p class="legenda">Figura 1 — Diagrama de Caso de Uso do NutriTrack.</p>
+</div>
+
+<!-- ================================================================ -->
+<!-- 8. DIAGRAMA ENTIDADE-RELACIONAMENTO (DER) -->
+<!-- ================================================================ -->
+<h2>8. Diagrama Entidade-Relacionamento (DER)</h2>
+
+<div class="diagrama">
+  <pre class="mermaid">
+erDiagram
+    USUARIO {
+        int id PK
+        string nome
+        string email
+        date dataNascimento
+        string telefones "multivalorado"
+    }
+
+    ALIMENTO {
+        int id PK
+        string nome
+        string marca
+        float kcalPor100g
+        float proteinaPor100g
+        float carboPor100g
+        float gorduraPor100g
+        string tags "multivalorado"
+    }
+
+    REFEICAO {
+        int id PK
+        int usuarioId FK
+        date data
+        string tipo
+        string observacao
+    }
+
+    CONSUMO {
+        int id PK
+        int refeicaoId FK
+        int alimentoId FK
+        float quantidadeGramas
+    }
+
+    USUARIO ||--o{ REFEICAO : "realiza (1:N)"
+    REFEICAO ||--o{ CONSUMO : "contem (1:N)"
+    ALIMENTO ||--o{ CONSUMO : "e consumido (1:N)"
+  </pre>
+  <p class="legenda">Figura 2 — Diagrama Entidade-Relacionamento do NutriTrack.</p>
+</div>
+
+<h3>8.1 Descrição das Entidades</h3>
+
+<p><strong>Usuário:</strong> Representa a pessoa que utiliza o sistema. Possui atributos simples
+(nome, email), um atributo do tipo data (dataNascimento, armazenado como <code>epochDay</code>)
+e um atributo multivalorado (telefones, armazenado como lista de strings).</p>
+
+<p><strong>Alimento:</strong> Representa um item alimentar com informações nutricionais por 100g.
+Contém atributos <code>float</code> para macronutrientes e um atributo multivalorado (tags).</p>
+
+<p><strong>Refeição:</strong> Representa uma refeição realizada por um usuário em determinada data.
+Possui chave estrangeira <code>usuarioId</code> (1:N com Usuário) e campos tipo e observação.</p>
+
+<p><strong>Consumo:</strong> Entidade associativa (tabela intermediária) que implementa o
+relacionamento N:N entre Refeição e Alimento, com o atributo <code>quantidadeGramas</code>.</p>
+
+<h3>8.2 Relacionamentos</h3>
+
+<table>
+  <tr><th>Relacionamento</th><th>Cardinalidade</th><th>Descrição</th></tr>
+  <tr><td>Usuário → Refeição</td><td>1 : N</td><td>Um usuário realiza várias refeições.</td></tr>
+  <tr><td>Refeição → Consumo</td><td>1 : N</td><td>Uma refeição contém vários itens consumidos.</td></tr>
+  <tr><td>Alimento → Consumo</td><td>1 : N</td><td>Um alimento pode ser consumido em várias refeições.</td></tr>
+</table>
+
+<!-- ================================================================ -->
+<!-- 9. ARQUITETURA PROPOSTA -->
+<!-- ================================================================ -->
+<h2>9. Arquitetura Proposta</h2>
+
+<p>
+  O sistema segue o padrão <strong>MVC + DAO</strong>, organizado em 4 camadas
+  bem definidas, mais a camada de persistência genérica.
+</p>
+
+<div class="diagrama">
+  <pre class="mermaid">
+graph TB
+    subgraph VIEW ["View — Interface"]
+        HTML["index.html + styles.css"]
+    end
+
+    subgraph CONTROLLER ["Controller — Regras de Negócio"]
+        UC["UsuarioController"]
+        AC["AlimentoController"]
+        RC["RefeicaoController"]
+        CC["ConsumoController"]
+    end
+
+    subgraph MODEL ["Model — Domínio"]
+        MU["Usuario"]
+        MA["Alimento"]
+        MR["Refeicao"]
+        MC["Consumo"]
+    end
+
+    subgraph DAO ["DAO — Acesso a Dados"]
+        UD["UsuarioDAO"]
+        AD["AlimentoDAO"]
+        RD["RefeicaoDAO"]
+        CD["ConsumoDAO"]
+    end
+
+    subgraph PERSISTENCIA ["Persistência — Arquivo Binário"]
+        ARQ["Arquivo‹T extends Registro›"]
+    end
+
+    subgraph DADOS ["Arquivos .db"]
+        F1["usuario.db"]
+        F2["alimento.db"]
+        F3["refeicao.db"]
+        F4["consumo.db"]
+    end
+
+    HTML --> UC
+    HTML --> AC
+    HTML --> RC
+    HTML --> CC
+
+    UC --> MU
+    AC --> MA
+    RC --> MR
+    CC --> MC
+
+    UC --> UD
+    AC --> AD
+    RC --> RD
+    CC --> CD
+
+    UD --> ARQ
+    AD --> ARQ
+    RD --> ARQ
+    CD --> ARQ
+
+    ARQ --> F1
+    ARQ --> F2
+    ARQ --> F3
+    ARQ --> F4
+  </pre>
+  <p class="legenda">Figura 3 — Diagrama de Arquitetura em Camadas (MVC + DAO).</p>
+</div>
+
+<h3>9.1 Descrição das Camadas</h3>
+
+<table>
+  <tr><th>Camada</th><th>Classes</th><th>Responsabilidade</th></tr>
+  <tr>
+    <td><strong>View</strong></td>
+    <td><code>index.html</code>, <code>styles.css</code></td>
+    <td>Interface mínima HTML/CSS. Apresenta as entidades e instruções de uso.</td>
+  </tr>
+  <tr>
+    <td><strong>Controller</strong></td>
+    <td><code>UsuarioController</code>, <code>AlimentoController</code>, <code>RefeicaoController</code>, <code>ConsumoController</code></td>
+    <td>Regras de negócio: validação de campos obrigatórios, validação de FKs (verifica se Usuário/Refeição/Alimento existem antes de criar), restrições de domínio (macros ≥ 0, gramas > 0).</td>
+  </tr>
+  <tr>
+    <td><strong>Model</strong></td>
+    <td><code>Usuario</code>, <code>Alimento</code>, <code>Refeicao</code>, <code>Consumo</code></td>
+    <td>Classes de domínio que implementam a interface <code>Registro</code>. Cada uma serializa/desserializa seus atributos via <code>toByteArray()</code> / <code>fromByteArray()</code>.</td>
+  </tr>
+  <tr>
+    <td><strong>DAO</strong></td>
+    <td><code>UsuarioDAO</code>, <code>AlimentoDAO</code>, <code>RefeicaoDAO</code>, <code>ConsumoDAO</code></td>
+    <td>Encapsulam o acesso ao <code>Arquivo&lt;T&gt;</code> genérico, expondo métodos <code>create</code>, <code>read</code>, <code>update</code>, <code>delete</code> e <code>close</code>.</td>
+  </tr>
+  <tr>
+    <td><strong>Persistência</strong></td>
+    <td><code>Arquivo&lt;T extends Registro&gt;</code></td>
+    <td>Classe genérica que gerencia o arquivo binário com cabeçalho (12 bytes), lápide e lista encadeada de removidos.</td>
+  </tr>
+</table>
+
+<!-- ================================================================ -->
+<!-- 10. ESTRUTURA DO ARQUIVO BINÁRIO -->
+<!-- ================================================================ -->
+<h2>10. Estrutura do Arquivo Binário</h2>
+
+<p>Cada arquivo <code>.db</code> segue a estrutura abaixo:</p>
+
+<h3>10.1 Cabeçalho (12 bytes)</h3>
+<table>
+  <tr><th>Offset</th><th>Tipo</th><th>Tamanho</th><th>Descrição</th></tr>
+  <tr><td>0</td><td><code>int</code></td><td>4 bytes</td><td>Último ID atribuído (auto-incremento).</td></tr>
+  <tr><td>4</td><td><code>long</code></td><td>8 bytes</td><td>Ponteiro (posição) da cabeça da lista de registros removidos. Valor <code>-1</code> indica lista vazia.</td></tr>
+</table>
+
+<h3>10.2 Registro</h3>
+<table>
+  <tr><th>Campo</th><th>Tipo</th><th>Tamanho</th><th>Descrição</th></tr>
+  <tr><td>Lápide</td><td><code>byte</code></td><td>1 byte</td><td><code>' '</code> (0x20) = ativo; <code>'*'</code> (0x2A) = removido.</td></tr>
+  <tr><td>Tamanho</td><td><code>short</code></td><td>2 bytes</td><td>Tamanho do array de dados em bytes.</td></tr>
+  <tr><td>Dados</td><td><code>byte[]</code></td><td>variável</td><td>Objeto serializado via <code>toByteArray()</code>.</td></tr>
+</table>
+
+<h3>10.3 Reaproveitamento de Espaço</h3>
+<p>
+  Quando um registro é removido, a lápide é marcada como <code>'*'</code> e a posição
+  é inserida em uma <strong>lista encadeada ordenada por tamanho</strong> (best-fit).
+  No momento de um <code>create</code> ou <code>update</code> que necessita de mais espaço,
+  o sistema busca na lista um espaço removido que caiba os novos dados. Caso não exista,
+  o registro é gravado no final do arquivo.
+</p>
+
+<!-- ================================================================ -->
+<!-- 11. TIPOS DE DADOS UTILIZADOS -->
+<!-- ================================================================ -->
+<h2>11. Tipos de Dados Utilizados</h2>
+
+<p>Conforme requisito do trabalho, o sistema utiliza:</p>
+
+<table>
+  <tr><th>Tipo</th><th>Onde</th><th>Serialização</th></tr>
+  <tr><td><strong>String</strong></td><td>nome, email, marca, tipo, observação</td><td><code>writeUTF</code> / <code>readUTF</code></td></tr>
+  <tr><td><strong>int</strong></td><td>id, FKs (usuarioId, refeicaoId, alimentoId)</td><td><code>writeInt</code> / <code>readInt</code></td></tr>
+  <tr><td><strong>float</strong></td><td>kcal, proteína, carbo, gordura, gramas</td><td><code>writeFloat</code> / <code>readFloat</code></td></tr>
+  <tr><td><strong>Data (LocalDate)</strong></td><td>dataNascimento, data da refeição</td><td>Convertido para <code>long epochDay</code> via <code>writeLong</code></td></tr>
+  <tr><td><strong>String multivalorada</strong></td><td>telefones (Usuário), tags (Alimento)</td><td><code>writeShort(qtd)</code> + N × <code>writeUTF</code></td></tr>
+</table>
+
+<!-- ================================================================ -->
+<!-- 12. INSTRUÇÕES DE COMPILAÇÃO E EXECUÇÃO -->
+<!-- ================================================================ -->
+<h2>12. Instruções de Compilação e Execução</h2>
+
+<p>Requisito: <strong>JDK 17+</strong> instalado e no PATH.</p>
+
+<pre><code># Compilar
+javac -d out src/app/*.java src/app/model/*.java src/app/dao/*.java src/app/controller/*.java
+
+# Executar (demo guiado)
+java -cp out app.Main
+
+# Os arquivos binários são gerados em:
+#   ./dados/usuario/usuario.db
+#   ./dados/alimento/alimento.db
+#   ./dados/refeicao/refeicao.db
+#   ./dados/consumo/consumo.db</code></pre>
+
+<!-- ================================================================ -->
+<!-- 13. ORGANIZAÇÃO DO PROJETO -->
+<!-- ================================================================ -->
+<h2>13. Organização do Projeto</h2>
+
+<pre><code>TP-AEDS-III/
+├── dados/                                  # Arquivos binários + índices (gerados em runtime)
+│   ├── usuario/
+│   │   ├── usuario.db                      # dados (cabeçalho + lápide)
+│   │   ├── usuario.idx.d.db                # diretório do hash extensível (PK)
+│   │   └── usuario.idx.c.db                # cestos do hash extensível (PK)
+│   ├── alimento/   (mesma estrutura)
+│   ├── refeicao/   (mesma estrutura)
+│   ├── consumo/    (mesma estrutura)
+│   └── consumo_por_refeicao/           # índice hash extensível 1:N (refeicao→consumo)
+│       ├── consumo_por_refeicao.idx.d.db
+│       └── consumo_por_refeicao.idx.c.db
+├── src/app/
+│   ├── Main.java                       # Demo guiado (console)
+│   ├── ConsoleApp.java                 # CRUD completo via menu (console)
+│   ├── Servidor.java                   # Servidor HTTP embutido (porta 8080)
+│   ├── Registro.java                   # interface
+│   ├── Arquivo.java                    # persistência genérica + índice primário
+│   ├── model/                          # Usuario, Alimento, Refeicao, Consumo
+│   ├── controller/                     # *Controller (regras + validações FK + cascade)
+│   └── dao/
+│       ├── RegistroHashExtensivel.java # interface das entradas do hash
+│       ├── HashExtensivel.java         # estrutura genérica (diretório + cestos)
+│       ├── ParIDEndereco.java          # entrada do índice primário (id→endereço)
+│       ├── ParIDID.java                # entrada do índice 1:N (FK→PK)
+│       ├── UsuarioDAO.java
+│       ├── AlimentoDAO.java
+│       ├── RefeicaoDAO.java
+│       └── ConsumoDAO.java             # mantém índice 1:N e cascade
+└── web/
+    ├── index.html                      # SPA (4 abas) que consome a API REST
+    ├── app.js                          # cliente JavaScript
+    ├── styles.css
+    └── documentacao.html               # este documento
+</code></pre>
+
+<!-- ================================================================ -->
+<!-- 14. CONSIDERAÇÕES FINAIS -->
+<!-- ================================================================ -->
+<h2>14. Considerações Finais</h2>
+
+<p>
+  O NutriTrack atende aos requisitos propostos: implementa CRUD completo para 4 entidades
+  inter-relacionadas, com persistência exclusivamente em arquivos binários. A classe genérica
+  <code>Arquivo&lt;T&gt;</code> centraliza toda a lógica de acesso a disco — cabeçalho com ID
+  auto-incremental, lápide para exclusão lógica e lista encadeada ordenada para reaproveitamento
+  de espaço. A validação de chaves estrangeiras é feita na camada Controller, garantindo
+  integridade referencial entre as entidades.
+</p>
+
+<!-- ================================================================ -->
+<!-- =================  FASE 2  ===================================== -->
+<!-- ================================================================ -->
+
+<h2>15. Fase 2 — Índices em Hash Extensível</h2>
+
+<h3>15.1 Visão geral</h3>
+<p>
+  Na Fase 2 o projeto recebeu duas adições estruturais que mudam a forma como os
+  registros são localizados em disco:
+</p>
+<ol>
+  <li>
+    <strong>Índice primário</strong> (uma por tabela) baseado em
+    <strong>Hash Extensível</strong>, mapeando <code>id (PK) → endereço no .db</code>.
+    Com isso, <code>read</code>, <code>update</code> e <code>delete</code> deixaram de
+    varrer linearmente o arquivo de dados e passaram a fazer um único
+    <code>seek</code> em O(1) médio.
+  </li>
+  <li>
+    <strong>Índice 1:N</strong> (uma instância) baseado em Hash Extensível, mapeando
+    <code>refeicaoId (FK) → consumoId (PK)</code>. Permite recuperar todos os
+    consumos de uma refeição em uma única consulta hash, sem varrer o arquivo de
+    consumos. Esse índice também viabiliza a remoção em cascata.
+  </li>
+</ol>
+
+<h3>15.2 Estrutura física do Hash Extensível</h3>
+<p>Cada índice é composto por <strong>dois arquivos</strong>:</p>
+
+<table>
+  <tr><th>Arquivo</th><th>Conteúdo</th></tr>
+  <tr>
+    <td><code>{nome}.idx.d.db</code></td>
+    <td>
+      <strong>Diretório:</strong> <code>int profundidadeGlobal</code> seguido de
+      <code>2^profGlobal</code> ponteiros <code>long</code> (endereços de cestos).
+    </td>
+  </tr>
+  <tr>
+    <td><code>{nome}.idx.c.db</code></td>
+    <td>
+      <strong>Cestos (buckets):</strong> sequência de cestos de tamanho fixo. Cada cesto
+      contém <code>byte profundidadeLocal</code> + <code>short quantidade</code> +
+      vetor de slots (cada slot tem o tamanho fixo da entrada).
+    </td>
+  </tr>
+</table>
+
+<p><strong>Tamanho de uma entrada:</strong></p>
+<table>
+  <tr><th>Tipo de entrada</th><th>Campos</th><th>Tamanho fixo</th></tr>
+  <tr>
+    <td><code>ParIDEndereco</code> (índice primário)</td>
+    <td><code>int id</code> + <code>long endereco</code></td>
+    <td>12 bytes</td>
+  </tr>
+  <tr>
+    <td><code>ParIDID</code> (índice 1:N)</td>
+    <td><code>int chave1 (FK)</code> + <code>int chave2 (PK)</code></td>
+    <td>8 bytes</td>
+  </tr>
+</table>
+
+<h3>15.3 Operações</h3>
+<ul>
+  <li>
+    <strong>Inserção:</strong> calcula <code>idx = hashCode &amp; (2^profGlobal − 1)</code>,
+    lê o ponteiro do diretório e tenta inserir o slot no cesto correspondente. Se o
+    cesto está cheio, ocorre <strong>split</strong>: a profundidade local é incrementada,
+    um novo cesto é alocado no fim do arquivo de cestos, os ponteiros do diretório são
+    reescritos e os elementos são redistribuídos. Caso a profundidade local ultrapasse
+    a global, o diretório é dobrado (cada ponteiro original passa a apontar para duas
+    entradas).
+  </li>
+  <li>
+    <strong>Leitura por chave:</strong> um <code>seek</code> no diretório, um
+    <code>seek</code> no cesto e varredura sequencial dentro do cesto (≤ slots por
+    cesto). O método <code>read(int)</code> retorna <em>todos</em> os elementos cujo
+    <code>hashCode()</code> bate, o que é essencial para o índice 1:N onde várias
+    entradas compartilham a mesma chave.
+  </li>
+  <li>
+    <strong>Remoção:</strong> identifica o slot pelo <code>equals()</code>
+    (no índice primário basta a chave; no índice 1:N considera o par
+    <code>(FK, PK)</code> para evitar remover entradas erradas).
+  </li>
+</ul>
+
+<h3>15.4 Acesso ao relacionamento 1:N</h3>
+<div class="diagrama">
+  <pre class="mermaid">
+flowchart LR
+    A[Cliente HTTP] -->|GET /api/refeicao/{id}/consumos| B[ConsumoController.listarPorRefeicao]
+    B --> C["HashExtensivel<ParIDID>.read(refeicaoId)"]
+    C --> D["[ParIDID(FK,PK)] no bucket"]
+    D --> E["para cada PK -> Arquivo<Consumo>.read(PK)"]
+    E --> F["seek O(1) usando indice primario hash"]
+    F --> G["JSON com lista de Consumos"]
+  </pre>
+  <p class="legenda">Figura 4 — Caminho de acesso ao relacionamento 1:N.</p>
+</div>
+
+<p>
+  A integridade referencial é garantida em duas frentes: (i) os <em>controllers</em>
+  validam, antes de inserir/atualizar, que as FKs apontam para registros existentes
+  (usando <code>exists(id)</code>, que reaproveita o índice primário); (ii) ao remover
+  uma refeição, o <code>RefeicaoController</code> consulta o índice 1:N e dispara o
+  <strong>cascade</strong> chamando <code>ConsumoDAO.removerPorRefeicao(id)</code>,
+  que apaga cada consumo associado e remove a respectiva entrada do índice 1:N.
+</p>
+
+<h3>15.5 Reconstrução automática</h3>
+<p>
+  Tanto o índice primário quanto o 1:N possuem rotina de reconstrução: se o arquivo
+  de índice está vazio mas o <code>.db</code> de dados já contém registros, o índice
+  é reconstruído na inicialização varrendo o arquivo de dados. Isso protege contra a
+  perda dos arquivos de índice e permite remover apenas a pasta de índices para
+  forçar a reconstrução.
+</p>
+
+<h3>15.6 Persistência e sincronização</h3>
+<ul>
+  <li>Tudo é gravado via <code>RandomAccessFile</code>; cada operação faz <code>seek</code> + <code>write</code> imediatamente, sem cache em memória.</li>
+  <li>Os índices são atualizados <strong>na mesma operação</strong> que altera o arquivo de dados (inserção, atualização que muda endereço, remoção).</li>
+  <li>O <code>close()</code> é chamado por um <em>shutdown hook</em> no servidor, garantindo flush dos arquivos.</li>
+</ul>
+
+<!-- ================================================================ -->
+<h2>16. Front-end e API REST</h2>
+
+<p>
+  O front-end é uma SPA estática em <code>web/</code> (HTML + CSS + JS vanilla)
+  servida pelo servidor HTTP embutido em <code>app.Servidor</code> (usa
+  <code>com.sun.net.httpserver.HttpServer</code> da JDK — sem dependências externas).
+  A interface oferece CRUD completo das 4 entidades em abas separadas e uma consulta
+  específica que demonstra o índice 1:N.
+</p>
+
+<table>
+  <tr><th>Endpoint</th><th>Método</th><th>Descrição</th></tr>
+  <tr><td><code>/api/usuario</code></td><td>GET / POST</td><td>Listar / criar usuários</td></tr>
+  <tr><td><code>/api/usuario/{id}</code></td><td>GET / PUT / DELETE</td><td>CRUD por ID (usa índice primário)</td></tr>
+  <tr><td><code>/api/alimento</code></td><td>GET / POST</td><td>Listar / criar alimentos</td></tr>
+  <tr><td><code>/api/alimento/{id}</code></td><td>GET / PUT / DELETE</td><td>CRUD por ID</td></tr>
+  <tr><td><code>/api/refeicao</code></td><td>GET / POST</td><td>Listar / criar refeições (valida FK usuarioId)</td></tr>
+  <tr><td><code>/api/refeicao/{id}</code></td><td>GET / PUT / DELETE</td><td>CRUD por ID; <em>delete</em> faz cascade nos consumos</td></tr>
+  <tr>
+    <td><code>/api/refeicao/{id}/consumos</code></td><td>GET</td>
+    <td><strong>Demonstra o índice 1:N</strong> (Hash Extensível refeicao→consumo)</td>
+  </tr>
+  <tr><td><code>/api/consumo</code></td><td>GET / POST</td><td>Listar / criar (valida FKs refeicaoId, alimentoId)</td></tr>
+  <tr><td><code>/api/consumo/{id}</code></td><td>GET / PUT / DELETE</td><td>CRUD por ID</td></tr>
+</table>
+
+<!-- ================================================================ -->
+<h2>17. Validação de entradas</h2>
+
+<table>
+  <tr><th>Cenário</th><th>Tratamento</th></tr>
+  <tr><td>PK auto-incrementada (não há duplicação possível)</td><td>O cabeçalho do arquivo controla o próximo ID; nenhum registro reaproveita ID.</td></tr>
+  <tr><td>Atualização de registro inexistente</td><td><code>Controller.atualizar</code> chama <code>dao.exists(id)</code>; lança <code>IllegalArgumentException</code>.</td></tr>
+  <tr><td>Remoção de registro inexistente</td><td>Mesma verificação via <code>exists</code>.</td></tr>
+  <tr><td>Busca de chave inexistente</td><td><code>read</code> retorna <code>null</code>; o servidor responde <code>404</code>.</td></tr>
+  <tr><td>FK inválida (usuarioId, refeicaoId, alimentoId)</td><td>Validada antes do <code>create</code>/<code>update</code>; resposta <code>400</code>.</td></tr>
+  <tr><td>Campos obrigatórios vazios / valores negativos</td><td>Validação no Controller; resposta <code>400</code>.</td></tr>
+  <tr><td>Remoção de refeição com consumos vinculados</td><td>Cascade automático via índice 1:N (remove todos os consumos associados).</td></tr>
+</table>
+
+<!-- ================================================================ -->
+<h2>18. Formulário de Projeto (Fase 2)</h2>
+
+<h3>a) Estrutura usada para representar os registros</h3>
+<p>
+  Cada registro implementa a interface <code>app.Registro</code>
+  (<code>getId/setId/toByteArray/fromByteArray</code>). A serialização usa
+  <code>DataOutputStream</code> sobre <code>ByteArrayOutputStream</code>, gerando
+  <code>byte[]</code> de tamanho variável. No arquivo binário cada registro é gravado como
+  <code>[lápide:1B][tamanho:short:2B][dados:byte[tamanho]]</code>, antecedido pelo cabeçalho
+  global do arquivo (<code>int últimoId</code> + <code>long ponteiroListaRemovidos</code>).
+</p>
+
+<h3>b) Como atributos multivalorados do tipo string foram tratados</h3>
+<p>
+  <code>Usuario.telefones</code> e <code>Alimento.tags</code> são <code>List&lt;String&gt;</code>
+  e são serializados como <code>[short qtd][writeUTF × qtd]</code>. Na desserialização lemos
+  o <code>short</code> e iteramos chamando <code>readUTF()</code>.
+</p>
+
+<h3>c) Como foi implementada a exclusão lógica</h3>
+<p>
+  Cada registro tem um byte de <strong>lápide</strong>: <code>' '</code> (ativo) ou
+  <code>'*'</code> (removido). O <code>delete</code> sobrescreve o byte com <code>'*'</code> e
+  registra o endereço em uma <strong>lista encadeada de espaços livres</strong> ordenada por
+  tamanho (<em>best-fit</em>). Em uma inserção/atualização que precise de mais espaço, o
+  método <code>getDeleted(tam)</code> percorre a lista buscando o primeiro nó com tamanho
+  suficiente; caso não exista, o registro é gravado no fim do arquivo.
+</p>
+
+<h3>d) Além das PKs, quais outras chaves foram utilizadas</h3>
+<ul>
+  <li><strong>Chave estrangeira (FK)</strong> <code>Refeicao.usuarioId</code> — validada na inserção/atualização.</li>
+  <li><strong>FK</strong> <code>Consumo.refeicaoId</code> — usada como chave de busca no índice 1:N.</li>
+  <li><strong>FK</strong> <code>Consumo.alimentoId</code> — validada para integridade referencial.</li>
+</ul>
+
+<h3>e) Como a estrutura (hash) foi implementada para cada chave de pesquisa</h3>
+<p>
+  A classe <code>HashExtensivel&lt;T extends RegistroHashExtensivel&lt;T&gt;&gt;</code> é
+  totalmente genérica e parametrizada pelo tipo de entrada. Cada índice é instanciado com
+  um número fixo de slots por cesto e um <code>Constructor&lt;T&gt;</code>. O hash usa os
+  <em>profundidadeGlobal</em> bits menos significativos de <code>hashCode()</code> para
+  indexar o diretório. <code>read(chave)</code> retorna todas as entradas do cesto que
+  batem com a chave (suportando 1:N). Quando um cesto enche, ocorre split com possível
+  duplicação do diretório.
+</p>
+<table>
+  <tr><th>Índice</th><th>Tipo de entrada</th><th>chave (hashCode)</th><th>Slots/cesto</th></tr>
+  <tr><td>Primário (cada tabela)</td><td><code>ParIDEndereco</code></td><td><code>id</code></td><td>8</td></tr>
+  <tr><td>1:N (Refeicao→Consumo)</td><td><code>ParIDID</code></td><td><code>refeicaoId</code></td><td>16</td></tr>
+</table>
+
+<h3>f) Como foi implementado o relacionamento 1:N</h3>
+<p>
+  O índice <code>consumo_por_refeicao</code> é um Hash Extensível de <code>ParIDID(FK, PK)</code>
+  que armazena, para cada consumo criado, o par <em>(refeicaoId, consumoId)</em>. A operação
+  <code>ConsumoDAO.listarPorRefeicao(refId)</code> consulta o hash com chave <code>refId</code>,
+  obtém todos os consumoIds e em seguida resolve cada um pelo índice primário do arquivo
+  <code>consumo</code>, retornando os objetos <code>Consumo</code>.
+</p>
+<p>
+  A <strong>integridade referencial</strong> é mantida em três pontos:
+  (1) na criação de um consumo, o controller verifica se a refeição e o alimento existem;
+  (2) ao alterar a <code>refeicaoId</code> de um consumo, o DAO remove o par antigo e insere o novo;
+  (3) ao remover uma refeição, o <code>RefeicaoController</code> consulta o índice 1:N
+  e remove em cascata todos os consumos associados (e suas entradas no índice).
+</p>
+
+<h3>g) Como os índices são persistidos em disco</h3>
+<p>
+  Cada índice tem <strong>dois arquivos</strong> em <code>./dados/{nome}/{nome}.idx.d.db</code>
+  (diretório) e <code>./dados/{nome}/{nome}.idx.c.db</code> (cestos). O diretório armazena
+  <code>profundidadeGlobal</code> + ponteiros <code>long</code>; cada cesto armazena
+  <code>profundidadeLocal</code> + <code>quantidade</code> + slots de tamanho fixo. As gravações
+  acontecem na mesma operação que altera o arquivo de dados — não há cache em memória — e o
+  servidor fecha todos os <code>RandomAccessFile</code> via <em>shutdown hook</em>. Se o
+  arquivo de índice for apagado, o sistema o reconstrói automaticamente na próxima inicialização
+  varrendo o arquivo <code>.db</code> de dados.
+</p>
+
+<h3>h) Estrutura do projeto no GitHub</h3>
+<p>
+  Veja a seção <strong>13. Organização do Projeto</strong>. O projeto segue MVC + DAO:
+  <code>model/</code> com classes de domínio, <code>dao/</code> com persistência (incluindo
+  Hash Extensível e índices), <code>controller/</code> com regras de negócio e validação,
+  e <code>web/</code> com a interface. A camada de transporte é o servidor HTTP embutido
+  em <code>Servidor.java</code>. O <code>README.md</code> traz instruções de compilação e
+  execução.
+</p>
+
+<!-- ================================================================ -->
+<!-- REFERÊNCIAS -->
+<!-- ================================================================ -->
+<h2>19. Referências</h2>
+
+<ol class="referencias">
+  <li>ZIVIANI, N. <em>Projeto de Algoritmos com Implementações em Java e C++</em>. 3ª ed. Cengage Learning, 2010.</li>
+  <li>CORMEN, T. H. et al. <em>Introduction to Algorithms</em>. 4th ed. MIT Press, 2022.</li>
+  <li>Oracle. <em>Java SE Documentation</em>. Disponível em: https://docs.oracle.com/en/java/. Acesso em: mar. 2026.</li>
+</ol>
+
+<script>mermaid.initialize({ startOnLoad: true, theme: 'neutral' });</script>
+</body>
+</html>

@@ -1,24 +1,36 @@
 package app;
 
+import app.dao.HashExtensivel;
+import app.dao.ParIDEndereco;
+
 import java.io.File;
 import java.io.RandomAccessFile;
 import java.lang.reflect.Constructor;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Arquivo<T> - Persistência em arquivo binário com:
- * - Cabeçalho: int (último ID) + long (ponteiro lista removidos)
- * - Registros: lápide (1 byte) + tamanho (short) + dados (byte[])
+ * Arquivo&lt;T&gt; — Persistência em arquivo binário com:
+ *  - Cabeçalho: int (último ID) + long (ponteiro lista removidos) = 12 bytes.
+ *  - Registros: lápide (1 byte) + tamanho (short) + dados (byte[]).
+ *  - Lista encadeada de espaços removidos (best-fit) para reaproveitamento.
+ *  - Índice primário em <b>Hash Extensível</b> (id -&gt; endereço no .db) para read/update/delete em O(1).
  *
- * Implementa CRUD e uma lista encadeada de espaços removidos (lápide) para reaproveitamento.
+ * Os índices ficam em <code>./dados/{nome}/{nome}.idx.d.db</code> e <code>...idx.c.db</code>.
+ *
+ * Se o índice primário estiver vazio mas o arquivo .db já tiver dados,
+ * o índice é reconstruído automaticamente na inicialização.
  */
 public class Arquivo<T extends Registro> {
 
-    // Cabeçalho: int (4) + long (8) = 12 bytes
     private static final int TAM_CABECALHO = 12;
+    /** Slots por bucket do índice primário. */
+    private static final int SLOTS_BUCKET_PRIMARIO = 8;
 
     private final RandomAccessFile arquivo;
     private final String nomeArquivo;
     private final Constructor<T> construtor;
+    private final HashExtensivel<ParIDEndereco> indicePrimario;
 
     public Arquivo(String nomeArquivo, Constructor<T> construtor) throws Exception {
         File diretorio = new File("./dados");
@@ -36,10 +48,40 @@ public class Arquivo<T extends Registro> {
             arquivo.writeInt(0);    // último ID
             arquivo.writeLong(-1);  // cabeça da lista de removidos
         }
+
+        // Índice primário (id -> endereço)
+        Constructor<ParIDEndereco> ctor = ParIDEndereco.class.getConstructor();
+        this.indicePrimario = new HashExtensivel<>(nomeArquivo, SLOTS_BUCKET_PRIMARIO, ctor);
+
+        // Reconstrução do índice caso o .db tenha registros mas o índice esteja vazio.
+        reconstruirIndiceSeNecessario();
     }
 
+    private void reconstruirIndiceSeNecessario() throws Exception {
+        if (arquivo.length() <= TAM_CABECALHO) return;
+        arquivo.seek(0);
+        int ultimoId = arquivo.readInt();
+        if (ultimoId == 0) return;
+        if (indicePrimario.readUm(ultimoId) != null) return; // já indexado
+        // varre o arquivo populando o índice
+        arquivo.seek(TAM_CABECALHO);
+        while (arquivo.getFilePointer() < arquivo.length()) {
+            long pos = arquivo.getFilePointer();
+            byte lapide = arquivo.readByte();
+            short tamanho = arquivo.readShort();
+            byte[] dados = new byte[tamanho];
+            arquivo.read(dados);
+            if (lapide == ' ') {
+                T obj = construtor.newInstance();
+                obj.fromByteArray(dados);
+                indicePrimario.create(new ParIDEndereco(obj.getId(), pos));
+            }
+        }
+    }
+
+    // ===== CRUD =====
+
     public int create(T obj) throws Exception {
-        // incrementa ID no cabeçalho
         arquivo.seek(0);
         int novoID = arquivo.readInt() + 1;
         arquivo.seek(0);
@@ -49,120 +91,129 @@ public class Arquivo<T extends Registro> {
         byte[] dados = obj.toByteArray();
 
         long endereco = getDeleted(dados.length);
+        long posicaoFinal;
         if (endereco == -1) {
-            // grava no final
-            arquivo.seek(arquivo.length());
-            arquivo.writeByte(' ');     // lápide (ativo)
+            posicaoFinal = arquivo.length();
+            arquivo.seek(posicaoFinal);
+            arquivo.writeByte(' ');
             arquivo.writeShort(dados.length);
             arquivo.write(dados);
         } else {
-            // reaproveita espaço removido
+            posicaoFinal = endereco;
             arquivo.seek(endereco);
             arquivo.writeByte(' ');
             arquivo.skipBytes(2);
             arquivo.write(dados);
         }
+        indicePrimario.create(new ParIDEndereco(novoID, posicaoFinal));
         return obj.getId();
     }
 
     public T read(int id) throws Exception {
-        arquivo.seek(TAM_CABECALHO);
-        while (arquivo.getFilePointer() < arquivo.length()) {
-            byte lapide = arquivo.readByte();
-            short tamanho = arquivo.readShort();
-            byte[] dados = new byte[tamanho];
-            arquivo.read(dados);
+        ParIDEndereco par = indicePrimario.readUm(id);
+        if (par == null) return null;
+        long pos = par.getEndereco();
+        arquivo.seek(pos);
+        byte lapide = arquivo.readByte();
+        short tamanho = arquivo.readShort();
+        byte[] dados = new byte[tamanho];
+        arquivo.read(dados);
+        if (lapide != ' ') return null;
+        T obj = construtor.newInstance();
+        obj.fromByteArray(dados);
+        if (obj.getId() != id) return null;
+        return obj;
+    }
 
-            if (lapide == ' ') {
-                T obj = construtor.newInstance();
-                obj.fromByteArray(dados);
-                if (obj.getId() == id) return obj;
-            }
-        }
-        return null;
+    public boolean exists(int id) throws Exception {
+        return read(id) != null;
     }
 
     public boolean update(T novoObj) throws Exception {
-        arquivo.seek(TAM_CABECALHO);
-        while (arquivo.getFilePointer() < arquivo.length()) {
-            long posicao = arquivo.getFilePointer();
-            byte lapide = arquivo.readByte();
-            short tamanho = arquivo.readShort();
-            byte[] dados = new byte[tamanho];
-            arquivo.read(dados);
+        ParIDEndereco par = indicePrimario.readUm(novoObj.getId());
+        if (par == null) return false;
+        long posicao = par.getEndereco();
 
-            if (lapide == ' ') {
-                T obj = construtor.newInstance();
-                obj.fromByteArray(dados);
-                if (obj.getId() == novoObj.getId()) {
-                    byte[] novosDados = novoObj.toByteArray();
-                    short novoTam = (short) novosDados.length;
+        arquivo.seek(posicao);
+        byte lapide = arquivo.readByte();
+        short tamanho = arquivo.readShort();
+        if (lapide != ' ') return false;
 
-                    if (novoTam <= tamanho) {
-                        // atualiza no mesmo lugar
-                        arquivo.seek(posicao + 3);
-                        arquivo.write(novosDados);
-                    } else {
-                        // marca removido e regrava em outro espaço
-                        arquivo.seek(posicao);
-                        arquivo.writeByte('*');
-                        addDeleted(tamanho, posicao);
+        byte[] novosDados = novoObj.toByteArray();
+        short novoTam = (short) novosDados.length;
 
-                        long novoEndereco = getDeleted(novosDados.length);
-                        if (novoEndereco == -1) {
-                            arquivo.seek(arquivo.length());
-                            arquivo.writeByte(' ');
-                            arquivo.writeShort(novoTam);
-                            arquivo.write(novosDados);
-                        } else {
-                            arquivo.seek(novoEndereco);
-                            arquivo.writeByte(' ');
-                            arquivo.skipBytes(2);
-                            arquivo.write(novosDados);
-                        }
-                    }
-                    return true;
-                }
-            }
+        if (novoTam <= tamanho) {
+            arquivo.seek(posicao + 3);
+            arquivo.write(novosDados);
+            return true;
         }
-        return false;
+
+        // marca removido e regrava em outro espaço
+        arquivo.seek(posicao);
+        arquivo.writeByte('*');
+        addDeleted(tamanho, posicao);
+
+        long novoEndereco = getDeleted(novosDados.length);
+        long posicaoFinal;
+        if (novoEndereco == -1) {
+            posicaoFinal = arquivo.length();
+            arquivo.seek(posicaoFinal);
+            arquivo.writeByte(' ');
+            arquivo.writeShort(novoTam);
+            arquivo.write(novosDados);
+        } else {
+            posicaoFinal = novoEndereco;
+            arquivo.seek(novoEndereco);
+            arquivo.writeByte(' ');
+            arquivo.skipBytes(2);
+            arquivo.write(novosDados);
+        }
+        indicePrimario.update(new ParIDEndereco(novoObj.getId(), posicaoFinal));
+        return true;
     }
 
     public boolean delete(int id) throws Exception {
+        ParIDEndereco par = indicePrimario.readUm(id);
+        if (par == null) return false;
+        long posicao = par.getEndereco();
+        arquivo.seek(posicao);
+        byte lapide = arquivo.readByte();
+        short tamanho = arquivo.readShort();
+        if (lapide != ' ') return false;
+        arquivo.seek(posicao);
+        arquivo.writeByte('*');
+        addDeleted(tamanho, posicao);
+        indicePrimario.deletePorChave(id);
+        return true;
+    }
+
+    /** Varre todos os registros ativos (lápide = ' '). */
+    public List<T> listar() throws Exception {
+        List<T> result = new ArrayList<>();
         arquivo.seek(TAM_CABECALHO);
         while (arquivo.getFilePointer() < arquivo.length()) {
-            long posicao = arquivo.getFilePointer();
             byte lapide = arquivo.readByte();
             short tamanho = arquivo.readShort();
             byte[] dados = new byte[tamanho];
             arquivo.read(dados);
-
             if (lapide == ' ') {
                 T obj = construtor.newInstance();
                 obj.fromByteArray(dados);
-                if (obj.getId() == id) {
-                    arquivo.seek(posicao);
-                    arquivo.writeByte('*');
-                    addDeleted(tamanho, posicao);
-                    return true;
-                }
+                result.add(obj);
             }
         }
-        return false;
+        return result;
     }
 
-    /**
-     * Insere um espaço removido (posicao) na lista encadeada, ordenando por tamanho (best-fit simples).
-     * No corpo do registro removido, armazenamos o "next" (long) em posicao+3.
-     */
+    // ===== lista de removidos (best-fit) =====
+
     private void addDeleted(int tamanhoEspaco, long enderecoEspaco) throws Exception {
-        long posicao = 4; // posição do ponteiro da lista removidos no cabeçalho (após int)
+        long posicao = 4;
         arquivo.seek(posicao);
         long endereco = arquivo.readLong();
         long proximo;
 
         if (endereco == -1) {
-            // lista vazia
             arquivo.seek(4);
             arquivo.writeLong(enderecoEspaco);
             arquivo.seek(enderecoEspaco + 3);
@@ -174,7 +225,6 @@ public class Arquivo<T extends Registro> {
                 proximo = arquivo.readLong();
 
                 if (tam > tamanhoEspaco) {
-                    // insere antes
                     if (posicao == 4) arquivo.seek(posicao);
                     else arquivo.seek(posicao + 3);
                     arquivo.writeLong(enderecoEspaco);
@@ -185,7 +235,6 @@ public class Arquivo<T extends Registro> {
                 }
 
                 if (proximo == -1) {
-                    // insere no fim
                     arquivo.seek(endereco + 3);
                     arquivo.writeLong(enderecoEspaco);
 
@@ -200,10 +249,6 @@ public class Arquivo<T extends Registro> {
         }
     }
 
-    /**
-     * Retorna um endereço de espaço removido que caiba (tam > necessario).
-     * Remove esse nó da lista e devolve o endereço para reuso.
-     */
     private long getDeleted(int tamanhoNecessario) throws Exception {
         long posicao = 4;
         arquivo.seek(posicao);
@@ -229,5 +274,8 @@ public class Arquivo<T extends Registro> {
 
     public void close() throws Exception {
         arquivo.close();
+        indicePrimario.close();
     }
+
+    public String descricaoIndice() { return indicePrimario.toString(); }
 }

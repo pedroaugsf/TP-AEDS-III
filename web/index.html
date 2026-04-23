@@ -1,67 +1,505 @@
 <!doctype html>
-<html lang="pt-br">
+<html lang="pt-br" data-theme="dark">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>NutriTrack - CRUD (MVC + DAO)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NutriTrack — Plataforma de Nutrição Inteligente</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🥑%3C/text%3E%3C/svg%3E" />
 </head>
 <body>
-  <header class="container">
-    <h1>NutriTrack</h1>
-    <p>Site mínimo para gerenciar valor nutricional consumido (CRUD em arquivos binários).</p>
-  </header>
 
-  <main class="container grid">
-    <section class="card">
-      <h2>Usuários</h2>
-      <p>CRUD de usuários (nome, email, data de nascimento e telefones).</p>
-      <ul>
-        <li>Campos: string, data, string multivalorada (telefones)</li>
-        <li>Arquivo: <code>./dados/usuario/usuario.db</code></li>
-      </ul>
-    </section>
+<!-- ============== SHELL ============== -->
+<div class="shell">
 
-    <section class="card">
-      <h2>Alimentos</h2>
-      <p>CRUD de alimentos (nome, marca, macros e tags).</p>
-      <ul>
-        <li>Campos: string, float, string multivalorada (tags)</li>
-        <li>Arquivo: <code>./dados/alimento/alimento.db</code></li>
-      </ul>
-    </section>
+  <!-- ============== SIDEBAR ============== -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c4 4 6 7 6 11a6 6 0 1 1-12 0c0-4 2-7 6-11Z"/><path d="M12 8v8"/><path d="M9 13h6"/></svg>
+      </div>
+      <div>
+        <div class="brand-title">NutriTrack</div>
+        <div class="brand-sub">Smart Nutrition</div>
+      </div>
+    </div>
 
-    <section class="card">
-      <h2>Refeições</h2>
-      <p>CRUD de refeições (data, tipo, observação).</p>
-      <ul>
-        <li>Campos: data, string</li>
-        <li>Arquivo: <code>./dados/refeicao/refeicao.db</code></li>
-      </ul>
-    </section>
+    <nav class="menu">
+      <button class="menu-item active" data-view="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+        <span>Dashboard</span>
+      </button>
+      <button class="menu-item" data-view="usuario">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Usuários</span>
+      </button>
+      <button class="menu-item" data-view="alimento">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12l-1 7H7L6 2z"/><path d="M5 9h14l-1 13H6L5 9z"/></svg>
+        <span>Alimentos</span>
+      </button>
+      <button class="menu-item" data-view="refeicao">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18"/><path d="M7 3v8a2 2 0 0 1-2 2H3"/><path d="M21 3l-1 7c-.2 1.4-1.4 2.5-2.8 2.5h-.7V21"/></svg>
+        <span>Refeições</span>
+      </button>
+      <button class="menu-item" data-view="consumo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg>
+        <span>Consumos</span>
+        <span class="pill">1:N</span>
+      </button>
 
-    <section class="card">
-      <h2>Consumos</h2>
-      <p>Tabela intermediária (N:N) entre Refeição e Alimento.</p>
-      <ul>
-        <li>Campos: FK refeicaoId, FK alimentoId, float (gramas)</li>
-        <li>Arquivo: <code>./dados/consumo/consumo.db</code></li>
-      </ul>
-    </section>
+      <div class="menu-section">Entrega Fase 2</div>
 
-    <section class="card full">
-      <h2>Como testar</h2>
-      <ol>
-        <li>Compile: <code>javac -d out src/app/**/*.java</code></li>
-        <li>Execute: <code>java -cp out app.Main</code></li>
-        <li>Veja os arquivos binários gerados em <code>./dados</code></li>
-      </ol>
-      <p class="hint">Esta interface é propositalmente mínima (HTML/CSS). A lógica está em Controller/DAO.</p>
-    </section>
-  </main>
+      <button class="menu-item" data-view="formulario">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6M9 9h2"/></svg>
+        <span>Formulário</span>
+        <span class="pill">a–h</span>
+      </button>
 
-  <footer class="container footer">
-    <small>Projeto exemplo — MVC + DAO (arquivo binário com cabeçalho e lápide).</small>
-  </footer>
+      <a class="menu-item" href="documentacao.html" target="_blank">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <span>Documentação</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="avatar">PA</div>
+        <div>
+          <div class="uname">Pedro & Luis</div>
+          <div class="urole">PUC Minas · AEDS III</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============== MAIN ============== -->
+  <div class="main">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <button class="icon-btn menu-toggle" id="menu-toggle" title="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="globalSearch" placeholder="Buscar usuários, alimentos, refeições…" />
+        <kbd>/</kbd>
+      </div>
+
+      <div class="topbar-actions">
+        <button class="icon-btn" id="theme-toggle" title="Alternar tema">
+          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+        <button class="btn-primary" id="quick-add">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          <span>Adicionar</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <!-- ================ DASHBOARD ================ -->
+      <section class="view active" id="view-dashboard">
+        <div class="page-head">
+          <div>
+            <h1>Visão geral</h1>
+            <p class="muted">Métricas em tempo real do consumo nutricional.</p>
+          </div>
+          <div class="page-head-actions">
+            <span class="badge-soft" id="serverPing">● online</span>
+          </div>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi card">
+            <div class="kpi-icon kpi-icon--violet">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            </div>
+            <div>
+              <div class="kpi-label">Usuários</div>
+              <div class="kpi-value" id="kpi-usuarios">—</div>
+              <div class="kpi-trend up">cadastrados</div>
+            </div>
+          </div>
+          <div class="kpi card">
+            <div class="kpi-icon kpi-icon--emerald">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h12l-1 7H7L6 2zM5 9h14l-1 13H6L5 9z"/></svg>
+            </div>
+            <div>
+              <div class="kpi-label">Alimentos</div>
+              <div class="kpi-value" id="kpi-alimentos">—</div>
+              <div class="kpi-trend up">na base</div>
+            </div>
+          </div>
+          <div class="kpi card">
+            <div class="kpi-icon kpi-icon--amber">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18"/><path d="M7 3v8a2 2 0 0 1-2 2H3"/><path d="M21 3l-1 7c-.2 1.4-1.4 2.5-2.8 2.5h-.7V21"/></svg>
+            </div>
+            <div>
+              <div class="kpi-label">Refeições</div>
+              <div class="kpi-value" id="kpi-refeicoes">—</div>
+              <div class="kpi-trend">registradas</div>
+            </div>
+          </div>
+          <div class="kpi card">
+            <div class="kpi-icon kpi-icon--rose">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg>
+            </div>
+            <div>
+              <div class="kpi-label">Consumos</div>
+              <div class="kpi-value" id="kpi-consumos">—</div>
+              <div class="kpi-trend up">via Hash 1:N</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h3>Calorias por refeição</h3>
+                <p class="muted">Top 8 refeições mais calóricas registradas</p>
+              </div>
+            </div>
+            <div class="chart-wrap"><canvas id="chartCalorias"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h3>Distribuição de macros</h3>
+                <p class="muted">Soma global de proteína, carboidrato e gordura</p>
+              </div>
+            </div>
+            <div class="chart-wrap"><canvas id="chartMacros"></canvas></div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h3>Atividade recente</h3>
+                <p class="muted">Últimos consumos cadastrados</p>
+              </div>
+            </div>
+            <ul class="timeline" id="recent-feed"><li class="muted">Carregando…</li></ul>
+          </div>
+          <div class="card highlight-card">
+            <div class="card-head">
+              <div>
+                <h3>Tecnologia em ação</h3>
+                <p class="muted">Por que o NutriTrack é rápido</p>
+              </div>
+            </div>
+            <ul class="feature-list">
+              <li><b>Hash Extensível</b> · busca de registros em O(1) médio</li>
+              <li><b>Índice 1:N persistente</b> · refeição → consumos sem varredura</li>
+              <li><b>Cascade delete</b> · integridade referencial garantida</li>
+              <li><b>Espaços livres com best-fit</b> · reaproveita slots removidos</li>
+              <li><b>Servidor HTTP embutido</b> · zero dependências externas</li>
+            </ul>
+            <a class="btn-ghost" href="documentacao.html" target="_blank">Ver documentação completa →</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================ USUÁRIO ================ -->
+      <section class="view" id="view-usuario">
+        <div class="page-head">
+          <div>
+            <h1>Usuários</h1>
+            <p class="muted">Gerencie os perfis cadastrados na plataforma.</p>
+          </div>
+          <div class="page-head-actions">
+            <input class="filter-input" data-filter="usuario" placeholder="Filtrar por nome ou email…"/>
+            <button class="btn-primary" data-open-modal="usuario">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+              <span>Novo usuário</span>
+            </button>
+          </div>
+        </div>
+        <div class="card no-pad">
+          <table class="data-table" id="tabela-usuario">
+            <thead><tr><th>#</th><th>Usuário</th><th>Email</th><th>Nascimento</th><th>Telefones</th><th class="t-right">Ações</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div class="empty hidden" id="empty-usuario">Nenhum usuário cadastrado.</div>
+        </div>
+      </section>
+
+      <!-- ================ ALIMENTO ================ -->
+      <section class="view" id="view-alimento">
+        <div class="page-head">
+          <div>
+            <h1>Alimentos</h1>
+            <p class="muted">Catálogo nutricional por 100g.</p>
+          </div>
+          <div class="page-head-actions">
+            <input class="filter-input" data-filter="alimento" placeholder="Filtrar por nome, marca ou tag…"/>
+            <button class="btn-primary" data-open-modal="alimento">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+              <span>Novo alimento</span>
+            </button>
+          </div>
+        </div>
+        <div class="card no-pad">
+          <table class="data-table" id="tabela-alimento">
+            <thead><tr><th>#</th><th>Alimento</th><th>Kcal</th><th>P</th><th>C</th><th>G</th><th>Tags</th><th class="t-right">Ações</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div class="empty hidden" id="empty-alimento">Nenhum alimento cadastrado.</div>
+        </div>
+      </section>
+
+      <!-- ================ REFEIÇÃO ================ -->
+      <section class="view" id="view-refeicao">
+        <div class="page-head">
+          <div>
+            <h1>Refeições</h1>
+            <p class="muted">Registros de refeições por usuário.</p>
+          </div>
+          <div class="page-head-actions">
+            <input class="filter-input" data-filter="refeicao" placeholder="Filtrar por tipo, data ou observação…"/>
+            <button class="btn-primary" data-open-modal="refeicao">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+              <span>Nova refeição</span>
+            </button>
+          </div>
+        </div>
+        <div class="card no-pad">
+          <table class="data-table" id="tabela-refeicao">
+            <thead><tr><th>#</th><th>Tipo</th><th>Data</th><th>Usuário</th><th>Observação</th><th class="t-right">Ações</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div class="empty hidden" id="empty-refeicao">Nenhuma refeição cadastrada.</div>
+        </div>
+      </section>
+
+      <!-- ================ CONSUMO ================ -->
+      <section class="view" id="view-consumo">
+        <div class="page-head">
+          <div>
+            <h1>Consumos <span class="chip chip-primary">1:N · Hash Extensível</span></h1>
+            <p class="muted">Itens consumidos em cada refeição.</p>
+          </div>
+          <div class="page-head-actions">
+            <input class="filter-input" data-filter="consumo" placeholder="Filtrar consumos…"/>
+            <button class="btn-primary" data-open-modal="consumo">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+              <span>Novo consumo</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="card no-pad">
+          <table class="data-table" id="tabela-consumo">
+            <thead><tr><th>#</th><th>Refeição</th><th>Alimento</th><th>Quantidade</th><th>Calorias</th><th class="t-right">Ações</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div class="empty hidden" id="empty-consumo">Nenhum consumo cadastrado.</div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <h3>Consultar consumos por refeição</h3>
+              <p class="muted">Demonstração do índice 1:N (Hash Extensível) — <code>refeicaoId → consumoId</code></p>
+            </div>
+          </div>
+          <div class="filter-bar">
+            <select id="filtro-refeicao" class="select"></select>
+            <button class="btn-primary" id="btn-filtrar">Buscar via Hash</button>
+          </div>
+          <pre id="resultado-filtro" class="resultado"></pre>
+        </div>
+      </section>
+
+      <!-- ================ FORMULÁRIO ================ -->
+      <section class="view" id="view-formulario">
+        <div class="page-head">
+          <div>
+            <h1>Formulário de Projeto <span class="chip chip-primary">Fase 2</span></h1>
+            <p class="muted">Respostas oficiais às perguntas a–h da especificação do TP.</p>
+          </div>
+          <div class="page-head-actions">
+            <button class="btn-ghost" onclick="window.print()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+              <span>Imprimir / PDF</span>
+            </button>
+            <a class="btn-primary" href="documentacao.html" target="_blank">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+              <span>Documento completo</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="checklist-card card">
+          <h3>✅ Checklist de entrega</h3>
+          <ul class="checklist">
+            <li><b>CRUD completo</b> · 4 tabelas (Usuário, Alimento, Refeição, Consumo) com create / read / update / delete</li>
+            <li><b>Índice primário em Hash Extensível</b> · 1 por tabela (id → endereço)</li>
+            <li><b>Relacionamento 1:N em Hash Extensível</b> · Refeição → Consumos (refeicaoId → consumoId)</li>
+            <li><b>Persistência em disco</b> · arquivos <code>.db</code> + <code>.idx.d.db</code> + <code>.idx.c.db</code> mantidos entre execuções</li>
+            <li><b>Front-end</b> · SPA com dashboard, gráficos, dark/light, modais e toasts</li>
+            <li><b>API REST</b> · servidor HTTP embutido em <code>app.Servidor</code></li>
+            <li><b>Validação</b> · PK inexistente, FK inválida, campos obrigatórios, valores negativos, cascade delete</li>
+            <li><b>Arquitetura</b> · MVC + DAO conforme proposta da Fase I</li>
+            <li><b>Documentação técnica</b> · disponível em <a href="documentacao.html" target="_blank">documentacao.html</a> (padrão SBC)</li>
+            <li><b>README</b> · instruções de compilação e execução</li>
+          </ul>
+        </div>
+
+        <div class="qa-list">
+
+          <article class="qa card">
+            <div class="qa-marker">a</div>
+            <h2>Estrutura usada para representar os registros</h2>
+            <p>Cada registro implementa a interface <code>app.Registro</code> (<code>getId/setId/toByteArray/fromByteArray</code>). A serialização usa <code>DataOutputStream</code> sobre <code>ByteArrayOutputStream</code>, gerando <code>byte[]</code> de tamanho variável. No arquivo binário cada registro é gravado como:</p>
+            <pre><code>[lápide:1B] [tamanho:short:2B] [dados:byte[tamanho]]</code></pre>
+            <p>O arquivo possui ainda um cabeçalho global de 12 bytes: <code>int últimoId (4B) + long ponteiroListaRemovidos (8B)</code>.</p>
+          </article>
+
+          <article class="qa card">
+            <div class="qa-marker">b</div>
+            <h2>Atributos multivalorados do tipo string</h2>
+            <p><code>Usuario.telefones</code> e <code>Alimento.tags</code> são <code>List&lt;String&gt;</code> e são serializados como:</p>
+            <pre><code>[short qtd] [writeUTF × qtd]</code></pre>
+            <p>Na desserialização lemos o <code>short</code> de quantidade e iteramos chamando <code>readUTF()</code> — formato compacto e auto-delimitado.</p>
+          </article>
+
+          <article class="qa card">
+            <div class="qa-marker">c</div>
+            <h2>Implementação da exclusão lógica</h2>
+            <p>Cada registro tem um byte de <strong>lápide</strong>: <code>' '</code> (ativo) ou <code>'*'</code> (removido). A operação <code>delete</code> sobrescreve o byte com <code>'*'</code> e registra o endereço em uma <strong>lista encadeada de espaços livres</strong> ordenada por tamanho (estratégia <em>best-fit</em>).</p>
+            <p>Em uma inserção/atualização que precise de mais espaço, o método <code>getDeleted(tam)</code> percorre a lista buscando o primeiro nó com tamanho suficiente; caso não exista, o registro é gravado no fim do arquivo.</p>
+          </article>
+
+          <article class="qa card">
+            <div class="qa-marker">d</div>
+            <h2>Outras chaves utilizadas além das PKs</h2>
+            <ul>
+              <li><b>FK</b> <code>Refeicao.usuarioId</code> — validada na inserção/atualização contra o índice primário de <code>Usuario</code>.</li>
+              <li><b>FK</b> <code>Consumo.refeicaoId</code> — usada como <strong>chave de busca no índice 1:N</strong> em Hash Extensível.</li>
+              <li><b>FK</b> <code>Consumo.alimentoId</code> — validada para integridade referencial.</li>
+            </ul>
+          </article>
+
+          <article class="qa card">
+            <div class="qa-marker">e</div>
+            <h2>Como o Hash Extensível foi implementado para cada chave</h2>
+            <p>A classe <code>HashExtensivel&lt;T extends RegistroHashExtensivel&lt;T&gt;&gt;</code> é totalmente <strong>genérica</strong> e parametrizada pelo tipo de entrada. Cada índice é instanciado com um número fixo de slots por cesto e um <code>Constructor&lt;T&gt;</code>.</p>
+            <p>O hash usa os <em>profundidadeGlobal</em> bits menos significativos de <code>hashCode()</code> para indexar o diretório. <code>read(chave)</code> retorna todas as entradas do cesto que batem com a chave (suportando 1:N). Quando um cesto enche, ocorre <em>split</em> com possível duplicação do diretório.</p>
+            <table>
+              <thead><tr><th>Índice</th><th>Tipo de entrada</th><th>Chave (hashCode)</th><th>Slots/cesto</th></tr></thead>
+              <tbody>
+                <tr><td>Primário (uma por tabela)</td><td><code>ParIDEndereco</code> (12B)</td><td><code>id</code></td><td>8</td></tr>
+                <tr><td>1:N (Refeicao→Consumo)</td><td><code>ParIDID</code> (8B)</td><td><code>refeicaoId</code></td><td>16</td></tr>
+              </tbody>
+            </table>
+          </article>
+
+          <article class="qa card">
+            <div class="qa-marker">f</div>
+            <h2>Como o relacionamento 1:N foi implementado</h2>
+            <p>O índice <code>consumo_por_refeicao</code> é um Hash Extensível de <code>ParIDID(FK, PK)</code> que armazena, para cada consumo criado, o par <em>(refeicaoId, consumoId)</em>.</p>
+            <p><b>Navegação:</b> <code>ConsumoDAO.listarPorRefeicao(refId)</code> consulta o hash com chave <code>refId</code>, obtém todos os consumoIds e em seguida resolve cada um pelo índice primário do arquivo <code>consumo</code>, retornando os objetos <code>Consumo</code>.</p>
+            <p><b>Integridade referencial</b> garantida em três pontos:</p>
+            <ol>
+              <li>Na criação de um consumo, o controller verifica se a refeição e o alimento existem (via <code>exists(id)</code> no índice primário).</li>
+              <li>Ao alterar a <code>refeicaoId</code> de um consumo, o DAO remove o par antigo do índice 1:N e insere o novo.</li>
+              <li>Ao remover uma refeição, o <code>RefeicaoController</code> consulta o índice 1:N e remove em <strong>cascade</strong> todos os consumos associados (e suas entradas no índice).</li>
+            </ol>
+          </article>
+
+          <article class="qa card">
+            <div class="qa-marker">g</div>
+            <h2>Como os índices são persistidos em disco</h2>
+            <p>Cada índice tem <strong>dois arquivos</strong> em <code>./dados/{nome}/</code>:</p>
+            <table>
+              <thead><tr><th>Arquivo</th><th>Conteúdo</th></tr></thead>
+              <tbody>
+                <tr><td><code>{nome}.idx.d.db</code></td><td><b>Diretório:</b> <code>int profundidadeGlobal</code> + <code>2^profGlobal</code> ponteiros <code>long</code></td></tr>
+                <tr><td><code>{nome}.idx.c.db</code></td><td><b>Cestos:</b> sequência de cestos com <code>byte profundidadeLocal</code> + <code>short qtd</code> + slots de tamanho fixo</td></tr>
+              </tbody>
+            </table>
+            <p><b>Atualização:</b> as gravações acontecem na <strong>mesma operação</strong> que altera o arquivo de dados — não há cache em memória — usando <code>RandomAccessFile</code> com <code>seek</code> + <code>write</code>.</p>
+            <p><b>Sincronização:</b> o servidor fecha todos os arquivos via <em>shutdown hook</em>. Se o arquivo de índice for apagado, o sistema o reconstrói automaticamente na próxima inicialização varrendo o arquivo <code>.db</code> de dados.</p>
+          </article>
+
+          <article class="qa card">
+            <div class="qa-marker">h</div>
+            <h2>Estrutura do projeto no GitHub</h2>
+            <p>O projeto segue <b>MVC + DAO</b>:</p>
+            <pre><code>TP-AEDS-III/
+├── README.md                # instruções de compilação e execução
+├── dados/                   # gerado em runtime (dados + índices)
+│   ├── usuario/  alimento/  refeicao/  consumo/
+│   └── consumo_por_refeicao/   ← índice 1:N
+├── src/app/
+│   ├── Servidor.java        # servidor HTTP embutido (porta 8080)
+│   ├── ConsoleApp.java      # CRUD via menu (alternativa)
+│   ├── Main.java            # demo guiado
+│   ├── Arquivo.java         # persistência genérica + índice primário
+│   ├── Registro.java
+│   ├── model/               # Usuario, Alimento, Refeicao, Consumo
+│   ├── controller/          # validações + cascade
+│   └── dao/
+│       ├── HashExtensivel.java          # estrutura genérica
+│       ├── RegistroHashExtensivel.java
+│       ├── ParIDEndereco.java           # entrada do índice primário
+│       ├── ParIDID.java                 # entrada do índice 1:N
+│       └── *DAO.java
+└── web/
+    ├── index.html  app.js  styles.css   # SPA front-end
+    └── documentacao.html                # documentação SBC</code></pre>
+          </article>
+
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- ============== MODAL ============== -->
+<div class="modal-backdrop hidden" id="modal-backdrop">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-head">
+      <h3 id="modal-title">Novo</h3>
+      <button class="icon-btn" id="modal-close" title="Fechar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<!-- ============== TOAST CONTAINER ============== -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- ============== CONFIRM ============== -->
+<div class="modal-backdrop hidden" id="confirm-backdrop">
+  <div class="modal modal-sm">
+    <div class="modal-head">
+      <h3 id="confirm-title">Confirmar</h3>
+    </div>
+    <div class="modal-body">
+      <p id="confirm-msg">Tem certeza?</p>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="confirm-no">Cancelar</button>
+        <button class="btn-danger" id="confirm-yes">Confirmar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="app.js"></script>
 </body>
 </html>

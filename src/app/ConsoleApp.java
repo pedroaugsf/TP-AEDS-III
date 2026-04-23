@@ -47,7 +47,7 @@ public class ConsoleApp {
 
         usuarioCtrl = new UsuarioController(usuarioDAO);
         alimentoCtrl = new AlimentoController(alimentoDAO);
-        refeicaoCtrl = new RefeicaoController(refeicaoDAO, usuarioDAO); // valida FK
+        refeicaoCtrl = new RefeicaoController(refeicaoDAO, usuarioDAO, consumoDAO); // valida FK + cascade
         consumoCtrl = new ConsumoController(consumoDAO, refeicaoDAO, alimentoDAO);
     }
 
