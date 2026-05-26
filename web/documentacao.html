@@ -822,9 +822,106 @@ flowchart LR
 </p>
 
 <!-- ================================================================ -->
-<!-- REFERÊNCIAS -->
 <!-- ================================================================ -->
-<h2>19. Referências</h2>
+<!-- FASE III -->
+<!-- ================================================================ -->
+<h2>19. Fase III — Árvore B+ e Relacionamento N:N (Favoritos)</h2>
+
+<p>A Fase III amplia o sistema com (i) um <strong>novo relacionamento N:N</strong> entre
+<code>Usuario</code> e <code>Alimento</code> — "Alimentos Favoritos" — usando uma
+<strong>tabela intermediária com chave primária composta</strong> indexada por
+<strong>dois</strong> índices Hash Extensível bidirecionais; e (ii) uma <strong>Árvore B+</strong>
+genérica implementada do zero, usada para resolver a consulta
+<em>"listar alimentos em ordem alfabética por nome"</em> percorrendo as folhas encadeadas
+da árvore <strong>sem ordenar nada em memória</strong>.</p>
+
+<h3>19.1 Modelo Favorito</h3>
+<table>
+  <tr><th>Campo</th><th>Tipo</th><th>Observação</th></tr>
+  <tr><td><code>id</code></td><td>int</td><td>PK interna (auto-incremento)</td></tr>
+  <tr><td><code>usuarioId</code></td><td>int</td><td>parte da chave composta</td></tr>
+  <tr><td><code>alimentoId</code></td><td>int</td><td>parte da chave composta</td></tr>
+  <tr><td><code>dataInclusao</code></td><td>LocalDate</td><td>persistido como <code>long epochDay</code></td></tr>
+  <tr><td><code>nota</code></td><td>byte (0–5)</td><td>0 = sem nota</td></tr>
+  <tr><td><code>observacao</code></td><td>UTF</td><td>texto livre</td></tr>
+</table>
+
+<p>A unicidade do par <code>(usuarioId, alimentoId)</code> é garantida em
+<code>FavoritoDAO.create</code>: antes de inserir, varre-se as entradas do índice
+<code>favorito_por_usuario</code> do <code>usuarioId</code> recebido e checa-se se algum favorito
+já aponta para o mesmo <code>alimentoId</code>. Em caso afirmativo a operação é rejeitada com
+<code>IllegalStateException</code> e o servidor responde <code>400</code>.</p>
+
+<h3>19.2 Índices do relacionamento N:N</h3>
+<table>
+  <tr><th>Índice</th><th>Estrutura</th><th>Entrada</th><th>Uso</th></tr>
+  <tr><td><code>favorito_por_usuario</code></td><td>Hash Extensível</td><td><code>ParIDID(usuarioId, favoritoId)</code></td><td>listar todos os alimentos favoritados por um usuário</td></tr>
+  <tr><td><code>favorito_por_alimento</code></td><td>Hash Extensível</td><td><code>ParIDID(alimentoId, favoritoId)</code></td><td>listar todos os usuários que favoritaram um alimento</td></tr>
+</table>
+
+<h3>19.3 Integridade referencial (cascade)</h3>
+<ul>
+  <li><code>UsuarioController.remover(id)</code> → <code>favoritoDAO.removerPorUsuario(id)</code> antes do <code>dao.delete</code>.</li>
+  <li><code>AlimentoController.remover(id)</code> → <code>favoritoDAO.removerPorAlimento(id)</code> antes do <code>dao.delete</code>.</li>
+  <li>Cada remoção em cascata apaga também as entradas correspondentes nos dois índices Hash.</li>
+</ul>
+
+<h3>19.4 Árvore B+ implementada (<code>app.dao.ArvoreBMais&lt;T&gt;</code>)</h3>
+<p>Estrutura genérica e persistente em <code>./dados/alimento/alimento.idx.bmais.db</code>,
+de <strong>ordem 8</strong>, usando entradas <code>ParNomeID</code> (60 bytes de nome em UTF-8
+zero-padded + 4 bytes de id, total 64 bytes). Layout do arquivo:</p>
+<pre><code>offset 0     : long enderecoRaiz     (-1 se vazia)
+offset 8+    : páginas de tamanho fixo
+
+[byte tipo]           // 0 = interno, 1 = folha
+[short n]             // número de entradas válidas
+[long proximo]        // ponteiro para próxima folha (folhas encadeadas)
+[entry × ordem]       // slots de entradas (sobra zerada)
+[long × (ordem+1)]    // ponteiros para filhos (apenas em internas)</code></pre>
+
+<p><b>Tamanho da página:</b> <code>1 + 2 + 8 + 8·64 + 9·8 = 595 bytes</code>.</p>
+
+<p><b>Operações:</b></p>
+<ul>
+  <li><b>Inserção:</b> recursiva. Em folha cheia: divide ao meio, encadeia a nova folha e <em>copia</em> a primeira chave da nova folha para o pai. Em interna cheia: divide e <em>sobe</em> a chave do meio.</li>
+  <li><b>Busca:</b> desce pelos internos, varre a folha (e folhas seguintes via <code>proximo</code>) enquanto <code>compareTo == 0</code>.</li>
+  <li><b>Remoção:</b> apaga a entrada da folha (sem rebalanceamento — equivalente à lápide).</li>
+  <li><b>Listagem ordenada:</b> a partir da folha mais à esquerda, segue <code>proximo</code> até <code>-1</code> coletando todas as entradas em ordem.</li>
+</ul>
+
+<h3>19.5 Justificativa: B+ vs Hash Extensível</h3>
+<p>A escolha foi orientada pelo <strong>padrão de acesso</strong>:</p>
+<ul>
+  <li><b>Hash Extensível</b> nos índices primários e nos dois índices do N:N de favoritos —
+  são consultas <em>equality lookup</em> ("dado este id, traga as associações"), em que
+  o Hash oferece custo médio O(1) (1 leitura no diretório + 1 no cesto). Não precisamos de
+  ordenação nessas chaves.</li>
+  <li><b>Árvore B+</b> no índice <code>nome → id</code> do Alimento —
+  o requisito é uma <strong>varredura ordenada</strong>. A B+ é ideal porque as folhas estão
+  encadeadas em ordem crescente de chave, permitindo retornar toda a sequência em uma única
+  passada <em>sem trazer registros para memória só para ordenar</em>. A mesma estrutura
+  ainda permite consultas por <em>faixa</em> com custo proporcional à resposta.</li>
+</ul>
+
+<h3>19.6 Novos endpoints da API</h3>
+<table>
+  <tr><th>Endpoint</th><th>Método</th><th>Descrição</th></tr>
+  <tr><td><code>/api/alimento/ordenado</code></td><td>GET</td><td><strong>Demonstra a Árvore B+</strong> — lista alimentos por nome via folhas encadeadas</td></tr>
+  <tr><td><code>/api/favorito</code></td><td>GET / POST</td><td>Listar / criar favorito (valida FKs e chave composta única)</td></tr>
+  <tr><td><code>/api/favorito/{id}</code></td><td>GET / PUT / DELETE</td><td>CRUD por ID (PUT não altera a chave composta)</td></tr>
+  <tr><td><code>/api/usuario/{id}/favoritos</code></td><td>GET</td><td><strong>Demonstra o índice N:N</strong> (Hash <code>usuarioId → favoritoId</code>)</td></tr>
+  <tr><td><code>/api/alimento/{id}/favoritos</code></td><td>GET</td><td><strong>Demonstra o índice N:N</strong> (Hash <code>alimentoId → favoritoId</code>)</td></tr>
+</table>
+
+<h3>19.7 Reconstrução automática</h3>
+<p>Tanto a Árvore B+ quanto os índices Hash são <strong>reconstruídos automaticamente</strong>
+se forem apagados. <code>AlimentoDAO</code> compara o número de entradas na B+ com o número
+de registros válidos do arquivo de dados; se for menor, percorre o arquivo de dados e
+reinsere todos os pares <code>(nome, id)</code>. <code>FavoritoDAO</code> faz o mesmo para
+os dois índices Hash do N:N.</p>
+
+<!-- ================================================================ -->
+<h2>20. Referências</h2>
 
 <ol class="referencias">
   <li>ZIVIANI, N. <em>Projeto de Algoritmos com Implementações em Java e C++</em>. 3ª ed. Cengage Learning, 2010.</li>

@@ -9,7 +9,8 @@ const state = {
   alimentos: [],
   refeicoes: [],
   consumos: [],
-  filters: { usuario: "", alimento: "", refeicao: "", consumo: "" },
+  favoritos: [],
+  filters: { usuario: "", alimento: "", refeicao: "", consumo: "", favorito: "" },
 };
 
 // ---------- helpers ----------
@@ -457,6 +458,140 @@ $("#btn-filtrar").addEventListener("click", async () => {
 });
 
 // ====================================================================
+//  ALIMENTO ORDENADO (FASE III · Árvore B+)
+// ====================================================================
+$("#btn-alimento-ordenado").addEventListener("click", async () => {
+  try {
+    const xs = await api("GET","/alimento/ordenado");
+    const linhas = xs.map(a => `#${String(a.id).padStart(3)} · ${a.nome}${a.marca?` [${a.marca}]`:""}`).join("\n");
+    $("#resultado-alimento-ordenado").textContent =
+      "GET /api/alimento/ordenado\n" +
+      "// Resolvido percorrendo as folhas encadeadas da Árvore B+\n" +
+      "// (sem ordenação em memória)\n\n" +
+      (linhas || "(nenhum alimento cadastrado)");
+  } catch (err) {
+    $("#resultado-alimento-ordenado").textContent = "Erro: " + err.message;
+  }
+});
+
+// ====================================================================
+//  FAVORITO (N:N · chave composta)
+// ====================================================================
+function formFavorito(f={}) {
+  const us = state.usuarios.map(u =>
+    `<option value="${u.id}" ${f.usuarioId===u.id?"selected":""}>#${u.id} · ${escapeHtml(u.nome)}</option>`).join("");
+  const al = state.alimentos.map(a =>
+    `<option value="${a.id}" ${f.alimentoId===a.id?"selected":""}>#${a.id} · ${escapeHtml(a.nome)}</option>`).join("");
+  const lockKeys = !!f.id;
+  return `<form class="form-grid">
+    <input type="hidden" name="id" value="${f.id||""}"/>
+    <div class="field full"><label>Usuário ${lockKeys?'<span class="muted">(imutável)</span>':""}</label>
+      <select name="usuarioId" ${lockKeys?"disabled":"required"}>${us || '<option value="">Nenhum usuário</option>'}</select></div>
+    <div class="field full"><label>Alimento ${lockKeys?'<span class="muted">(imutável)</span>':""}</label>
+      <select name="alimentoId" ${lockKeys?"disabled":"required"}>${al || '<option value="">Nenhum alimento</option>'}</select></div>
+    <div class="field"><label>Data</label>
+      <input name="dataInclusao" type="date" value="${f.dataInclusao||""}"/></div>
+    <div class="field"><label>Nota (1–5)</label>
+      <input name="nota" type="number" min="1" max="5" step="1" value="${f.nota||""}" placeholder="opcional"/></div>
+    <div class="field full"><label>Observação</label>
+      <input name="observacao" value="${escapeHtml(f.observacao||"")}" placeholder="Opcional"/></div>
+    <div class="modal-actions full">
+      <button type="button" class="btn-ghost" onclick="modal.close()">Cancelar</button>
+      <button type="submit" class="btn-primary">${f.id ? "Atualizar" : "Criar favorito"}</button>
+    </div>
+  </form>`;
+}
+async function submitFavorito(form) {
+  const f = Object.fromEntries(new FormData(form));
+  if (f.id) {
+    const payload = {
+      dataInclusao: f.dataInclusao || "",
+      nota: f.nota ? parseInt(f.nota, 10) : 0,
+      observacao: f.observacao || "",
+    };
+    await api("PUT","/favorito/"+f.id, payload);
+  } else {
+    const payload = {
+      usuarioId: parseInt(f.usuarioId, 10),
+      alimentoId: parseInt(f.alimentoId, 10),
+      dataInclusao: f.dataInclusao || "",
+      nota: f.nota ? parseInt(f.nota, 10) : 0,
+      observacao: f.observacao || "",
+    };
+    await api("POST","/favorito", payload);
+  }
+  toast(f.id ? "Favorito atualizado" : "Favorito criado");
+  await loadAll();
+}
+function renderFavoritos() {
+  const q = state.filters.favorito;
+  const userMap = Object.fromEntries(state.usuarios.map(u => [u.id, u]));
+  const alMap   = Object.fromEntries(state.alimentos.map(a => [a.id, a]));
+  const xs = state.favoritos.filter(f => {
+    if (!q) return true;
+    const u = userMap[f.usuarioId], a = alMap[f.alimentoId];
+    return ((u?.nome||"")+" "+(a?.nome||"")+" "+(f.observacao||"")).toLowerCase().includes(q);
+  });
+  $("#empty-favorito").classList.toggle("hidden", xs.length > 0);
+  $("#tabela-favorito tbody").innerHTML = xs.map(f => {
+    const u = userMap[f.usuarioId], a = alMap[f.alimentoId];
+    const nota = f.nota>0 ? "⭐".repeat(f.nota) : '<span class="muted">—</span>';
+    return `<tr>
+      <td><span class="id-pill">#${f.id}</span></td>
+      <td>${u ? `<div class="cell-user"><div class="avatar">${initials(u.nome)}</div><span>${escapeHtml(u.nome)}</span></div>` : `<span class="muted">#${f.usuarioId}</span>`}</td>
+      <td>${a ? `<b>${escapeHtml(a.nome)}</b>` : `<span class="muted">#${f.alimentoId}</span>`}</td>
+      <td>${fmtDate(f.dataInclusao)}</td>
+      <td>${nota}</td>
+      <td>${escapeHtml(f.observacao) || '<span class="muted">—</span>'}</td>
+      <td class="t-right">
+        <button class="row-action" title="Editar" onclick='editarFavorito(${f.id})'>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button class="row-action danger" title="Remover" onclick="removerFavorito(${f.id})">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+        </button>
+      </td>
+    </tr>`;
+  }).join("");
+
+  // popula selects dos filtros laterais
+  $("#filtro-fav-usuario").innerHTML = state.usuarios.map(u =>
+    `<option value="${u.id}">#${u.id} · ${escapeHtml(u.nome)}</option>`).join("");
+  $("#filtro-fav-alimento").innerHTML = state.alimentos.map(a =>
+    `<option value="${a.id}">#${a.id} · ${escapeHtml(a.nome)}</option>`).join("");
+}
+window.editarFavorito = (id) => {
+  const f = state.favoritos.find(x => x.id === id);
+  modal.open("Editar favorito #" + id, formFavorito(f), submitFavorito);
+};
+window.removerFavorito = async (id) => {
+  if (!await confirmar("Remover favorito", "Confirma a remoção do favorito #"+id+"?")) return;
+  try { await api("DELETE","/favorito/"+id); toast("Favorito removido"); await loadAll(); }
+  catch (err) { toast(err.message, "error"); }
+};
+
+$("#btn-fav-usuario").addEventListener("click", async () => {
+  const id = $("#filtro-fav-usuario").value; if (!id) return;
+  try {
+    const xs = await api("GET","/usuario/"+id+"/favoritos");
+    $("#resultado-fav-usuario").textContent =
+      "GET /api/usuario/"+id+"/favoritos\n" +
+      "// Resolvido via Hash Extensível (usuarioId → favoritoId)\n\n" +
+      JSON.stringify(xs, null, 2);
+  } catch (err) { $("#resultado-fav-usuario").textContent = "Erro: " + err.message; }
+});
+$("#btn-fav-alimento").addEventListener("click", async () => {
+  const id = $("#filtro-fav-alimento").value; if (!id) return;
+  try {
+    const xs = await api("GET","/alimento/"+id+"/favoritos");
+    $("#resultado-fav-alimento").textContent =
+      "GET /api/alimento/"+id+"/favoritos\n" +
+      "// Resolvido via Hash Extensível (alimentoId → favoritoId)\n\n" +
+      JSON.stringify(xs, null, 2);
+  } catch (err) { $("#resultado-fav-alimento").textContent = "Erro: " + err.message; }
+});
+
+// ====================================================================
 //  QUICK ADD
 // ====================================================================
 $("#quick-add").addEventListener("click", () => {
@@ -471,6 +606,7 @@ function openCreateModal(kind) {
     case "alimento": modal.open("Novo alimento", formAlimento(), submitAlimento); break;
     case "refeicao": modal.open("Nova refeição", formRefeicao(), submitRefeicao); break;
     case "consumo":  modal.open("Novo consumo",  formConsumo(),  submitConsumo);  break;
+    case "favorito": modal.open("Novo favorito", formFavorito(), submitFavorito); break;
   }
 }
 
@@ -588,16 +724,18 @@ function renderCharts() {
 // ====================================================================
 async function loadAll() {
   try {
-    const [us, al, rf, co] = await Promise.all([
+    const [us, al, rf, co, fv] = await Promise.all([
       api("GET","/usuario"),
       api("GET","/alimento"),
       api("GET","/refeicao"),
       api("GET","/consumo"),
+      api("GET","/favorito"),
     ]);
     state.usuarios  = us || [];
     state.alimentos = al || [];
     state.refeicoes = rf || [];
     state.consumos  = co || [];
+    state.favoritos = fv || [];
     renderAll();
   } catch (err) {
     toast("Falha ao carregar dados: " + err.message, "error");
@@ -608,6 +746,7 @@ function renderAll() {
   renderAlimentos();
   renderRefeicoes();
   renderConsumos();
+  renderFavoritos();
   renderDashboard();
 }
 

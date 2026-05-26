@@ -49,13 +49,23 @@
         <span>Consumos</span>
         <span class="pill">1:N</span>
       </button>
+      <button class="menu-item" data-view="favorito">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        <span>Favoritos</span>
+        <span class="pill">N:N</span>
+      </button>
 
-      <div class="menu-section">Entrega Fase 2</div>
+      <div class="menu-section">Entregas</div>
 
       <button class="menu-item" data-view="formulario">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6M9 9h2"/></svg>
-        <span>Formulário</span>
+        <span>Formulário Fase 2</span>
         <span class="pill">a–h</span>
+      </button>
+      <button class="menu-item" data-view="formulario3">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6M9 9h2"/></svg>
+        <span>Formulário Fase 3</span>
+        <span class="pill">B+ · N:N</span>
       </button>
 
       <a class="menu-item" href="documentacao.html" target="_blank">
@@ -254,6 +264,72 @@
             <tbody></tbody>
           </table>
           <div class="empty hidden" id="empty-alimento">Nenhum alimento cadastrado.</div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <h3>Listagem ordenada por nome <span class="chip chip-primary">Fase III · Árvore B+</span></h3>
+              <p class="muted">Resolvida percorrendo as folhas da B+ encadeadas — <strong>sem ordenação em memória</strong>.</p>
+            </div>
+            <button class="btn-primary" id="btn-alimento-ordenado">Listar via B+</button>
+          </div>
+          <pre id="resultado-alimento-ordenado" class="resultado">GET /api/alimento/ordenado
+// clique no botão para executar</pre>
+        </div>
+      </section>
+
+      <!-- ================ FAVORITO ================ -->
+      <section class="view" id="view-favorito">
+        <div class="page-head">
+          <div>
+            <h1>Alimentos Favoritos <span class="chip chip-primary">N:N · chave composta</span></h1>
+            <p class="muted">Tabela intermediária Usuário ↔ Alimento com dois índices Hash Extensível.</p>
+          </div>
+          <div class="page-head-actions">
+            <input class="filter-input" data-filter="favorito" placeholder="Filtrar favoritos…"/>
+            <button class="btn-primary" data-open-modal="favorito">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+              <span>Novo favorito</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="card no-pad">
+          <table class="data-table" id="tabela-favorito">
+            <thead><tr><th>#</th><th>Usuário</th><th>Alimento</th><th>Data</th><th>Nota</th><th>Observação</th><th class="t-right">Ações</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div class="empty hidden" id="empty-favorito">Nenhum favorito cadastrado.</div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h3>Favoritos por usuário</h3>
+                <p class="muted">Índice <code>usuarioId → favoritoId</code> (Hash Extensível)</p>
+              </div>
+            </div>
+            <div class="filter-bar">
+              <select id="filtro-fav-usuario" class="select"></select>
+              <button class="btn-primary" id="btn-fav-usuario">Buscar</button>
+            </div>
+            <pre id="resultado-fav-usuario" class="resultado"></pre>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h3>Favoritos por alimento</h3>
+                <p class="muted">Índice <code>alimentoId → favoritoId</code> (Hash Extensível)</p>
+              </div>
+            </div>
+            <div class="filter-bar">
+              <select id="filtro-fav-alimento" class="select"></select>
+              <button class="btn-primary" id="btn-fav-alimento">Buscar</button>
+            </div>
+            <pre id="resultado-fav-alimento" class="resultado"></pre>
+          </div>
         </div>
       </section>
 
@@ -458,6 +534,134 @@
 └── web/
     ├── index.html  app.js  styles.css   # SPA front-end
     └── documentacao.html                # documentação SBC</code></pre>
+        </div>
+      </section>
+
+      <!-- ================ FORMULÁRIO FASE 3 ================ -->
+      <section class="view" id="view-formulario3">
+        <div class="page-head">
+          <div>
+            <h1>Formulário de Projeto <span class="chip chip-primary">Fase 3</span></h1>
+            <p class="muted">Respostas oficiais às 8 questões da Fase III (Árvore B+ e Relacionamento N:N).</p>
+          </div>
+          <div class="page-head-actions">
+            <button class="btn-ghost" onclick="window.print()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+              <span>Imprimir / PDF</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="checklist-card card">
+          <h3>✅ Checklist Fase III</h3>
+          <ul class="checklist">
+            <li><b>Relacionamento N:N</b> · Usuário ↔ Alimento via tabela intermediária <code>Favorito</code></li>
+            <li><b>Chave primária composta</b> · par (<code>usuarioId</code>, <code>alimentoId</code>) único — validado na inserção</li>
+            <li><b>Dois índices Hash Extensível</b> · <code>favorito_por_usuario</code> e <code>favorito_por_alimento</code></li>
+            <li><b>Árvore B+ implementada do zero</b> · genérica, persistente em <code>./dados/alimento/alimento.idx.bmais.db</code></li>
+            <li><b>Consulta ordenada via B+</b> · listagem de alimentos por nome <strong>sem ordenação em memória</strong> (folhas encadeadas)</li>
+            <li><b>Integridade referencial (cascade)</b> · remover Usuário/Alimento remove os favoritos vinculados</li>
+            <li><b>Cabeçalho + lápide + lista de removidos</b> · mantidos da Fase II em todas as tabelas, inclusive Favorito</li>
+            <li><b>Sem interface de console</b> · 100% via API REST + SPA</li>
+            <li><b>Reconstrução automática</b> · os índices B+ e Hash são refeitos se forem apagados</li>
+          </ul>
+        </div>
+
+        <div class="qa-list">
+
+          <article class="qa card">
+            <div class="qa-marker">1</div>
+            <h2>Qual relacionamento N:N foi implementado?</h2>
+            <p>O relacionamento <strong>"Alimentos Favoritos"</strong> entre <code>Usuario</code> e <code>Alimento</code>. Cada usuário pode favoritar muitos alimentos e cada alimento pode ser favoritado por muitos usuários.</p>
+            <p>Foi criada a tabela intermediária <code>Favorito</code> com os atributos: <code>id</code> (PK interna), <code>usuarioId</code>, <code>alimentoId</code>, <code>dataInclusao</code> (data), <code>nota</code> (1–5) e <code>observacao</code>.</p>
+          </article>
+
+          <article class="qa card">
+            <div class="qa-marker">2</div>
+            <h2>Como a chave primária composta foi modelada?</h2>
+            <p>A unicidade do par (<code>usuarioId</code>, <code>alimentoId</code>) é garantida em <code>FavoritoDAO.create</code>: antes de inserir, consulta-se o índice <code>favorito_por_usuario</code> para o <code>usuarioId</code> recebido e verifica-se se algum favorito do usuário aponta para o mesmo <code>alimentoId</code>. Caso exista, a operação é rejeitada com <code>IllegalStateException</code> e o servidor responde 400.</p>
+            <p>Além disso, o <code>FavoritoController.atualizar</code> não permite reatribuir os campos da chave composta — preserva os valores originais do registro armazenado.</p>
+          </article>
+
+          <article class="qa card">
+            <div class="qa-marker">3</div>
+            <h2>Quais índices auxiliares foram criados para o N:N?</h2>
+            <p>Dois índices em <strong>Hash Extensível</strong>, um para cada direção da consulta:</p>
+            <table>
+              <thead><tr><th>Índice</th><th>Entrada</th><th>Chave</th><th>Uso</th></tr></thead>
+              <tbody>
+                <tr><td><code>favorito_por_usuario</code></td><td><code>ParIDID(usuarioId, favoritoId)</code></td><td><code>usuarioId</code></td><td>listar todos os alimentos favoritados por um usuário</td></tr>
+                <tr><td><code>favorito_por_alimento</code></td><td><code>ParIDID(alimentoId, favoritoId)</code></td><td><code>alimentoId</code></td><td>listar todos os usuários que favoritaram um alimento</td></tr>
+              </tbody>
+            </table>
+            <p>Ambos são genéricos (<code>HashExtensivel&lt;ParIDID&gt;</code>) e persistidos em <code>./dados/favorito_por_usuario/</code> e <code>./dados/favorito_por_alimento/</code>.</p>
+          </article>
+
+          <article class="qa card">
+            <div class="qa-marker">4</div>
+            <h2>Como o sistema garante a integridade referencial?</h2>
+            <ol>
+              <li><b>Validação de FKs:</b> <code>FavoritoController.criar</code> verifica que <code>usuarioId</code> e <code>alimentoId</code> existem nos índices primários de Usuário e Alimento antes de inserir.</li>
+              <li><b>Cascade ao remover Usuário:</b> <code>UsuarioController.remover</code> chama <code>favoritoDAO.removerPorUsuario(id)</code>, que apaga todos os favoritos vinculados (e suas entradas nos dois índices) antes de remover o usuário.</li>
+              <li><b>Cascade ao remover Alimento:</b> simétrico — <code>AlimentoController.remover</code> chama <code>favoritoDAO.removerPorAlimento(id)</code>.</li>
+              <li><b>Unicidade da PK composta:</b> ver questão 2.</li>
+            </ol>
+          </article>
+
+          <article class="qa card">
+            <div class="qa-marker">5</div>
+            <h2>Qual consulta ordenada foi implementada com Árvore B+?</h2>
+            <p>A consulta <strong>"listar alimentos em ordem alfabética por nome"</strong>, exposta em <code>GET /api/alimento/ordenado</code> e demonstrada no card "Listagem ordenada por nome" da tela de Alimentos.</p>
+            <p>É resolvida em duas etapas:</p>
+            <ol>
+              <li><code>AlimentoDAO.listarOrdenadoPorNome</code> chama <code>idxNome.listarTodos()</code>, que <strong>percorre a lista encadeada de folhas</strong> da B+ em ordem crescente de chave e devolve uma lista de <code>ParNomeID(nome, id)</code>.</li>
+              <li>Para cada par, o DAO resolve o registro completo via índice primário (Hash Extensível) com <code>arq.read(id)</code>.</li>
+            </ol>
+            <p>Em nenhum momento os registros são trazidos para memória para serem ordenados — a ordem já está materializada nas folhas da árvore.</p>
+          </article>
+
+          <article class="qa card">
+            <div class="qa-marker">6</div>
+            <h2>Como a Árvore B+ foi implementada?</h2>
+            <p>A classe <code>app.dao.ArvoreBMais&lt;T extends RegistroArvoreBMais&lt;T&gt;&gt;</code> é totalmente genérica e persistente. O arquivo de índice tem o layout:</p>
+            <pre><code>offset 0     : long enderecoRaiz     (-1 se vazia)
+offset 8+    : páginas de tamanho fixo
+
+[byte tipo]          // 0 = interno, 1 = folha
+[short n]            // nº de entradas armazenadas
+[long proximo]       // próxima folha (-1 nas internas / última folha)
+[entry × ordem]      // slots de entradas (resto zerado)
+[long × (ordem+1)]   // ponteiros para filhos (só usados em internas)</code></pre>
+            <p>A ordem usada é <strong>8</strong> e a entrada da B+ de alimento (<code>ParNomeID</code>) ocupa <strong>64 bytes</strong> (60 bytes de nome + 4 bytes de id), dando páginas de <strong>595 bytes</strong>.</p>
+            <p><b>Inserção:</b> recursiva, com <em>split</em> de folha (chave do meio é <em>copiada</em> para o pai) e <em>split</em> de interna (chave do meio <em>sobe</em>). <b>Remoção:</b> apaga a entrada na folha sem rebalanceamento. <b>Busca:</b> desce pelos internos e varre folhas enquanto <code>compareTo == 0</code>.</p>
+            <p>O <code>compareTo</code> de <code>ParNomeID</code> normaliza o nome (<code>trim + lowercase</code>) e desempata pelo <code>id</code>, garantindo ordem total e evitando colisões.</p>
+          </article>
+
+          <article class="qa card">
+            <div class="qa-marker">7</div>
+            <h2>Justificativa: B+ vs Hash Extensível</h2>
+            <p>A escolha foi feita por <strong>padrão de acesso</strong>, não por preferência teórica:</p>
+            <ul>
+              <li><b>Hash Extensível</b> para os dois índices do N:N (<code>favorito_por_usuario</code>, <code>favorito_por_alimento</code>) e para os índices primários (<code>id → endereço</code>). Esses acessos são sempre <em>equality lookup</em> ("dado este id, me dê as associações"), em que o Hash entrega O(1) médio com 1 leitura no diretório + 1 no cesto. Uma B+ daria O(log n) sem ganho real, pois <em>não precisamos</em> de ordenação por essas chaves.</li>
+              <li><b>Árvore B+</b> para o índice <em>nome → id</em> do alimento. Aqui o requisito é uma <strong>varredura ordenada</strong> — a B+ é especialmente boa nisso porque as folhas estão encadeadas em ordem crescente de chave, permitindo recuperar toda a sequência em uma única passada sem ordenar nada em memória. A mesma estrutura ainda permite, no futuro, consultas por <em>faixa</em> (ex.: alimentos entre "a" e "f") com custo proporcional ao tamanho da resposta.</li>
+            </ul>
+            <p>Em resumo: usa-se Hash quando o acesso é por <em>igualdade</em>; usa-se B+ quando o acesso é por <em>ordem</em> ou <em>faixa</em>.</p>
+          </article>
+
+          <article class="qa card">
+            <div class="qa-marker">8</div>
+            <h2>Como os arquivos da Fase III são organizados em disco?</h2>
+            <table>
+              <thead><tr><th>Arquivo</th><th>Propósito</th></tr></thead>
+              <tbody>
+                <tr><td><code>./dados/favorito/favorito.db</code></td><td>Tabela intermediária do N:N (cabeçalho + lápide + best-fit)</td></tr>
+                <tr><td><code>./dados/favorito/favorito.idx.d.db</code> + <code>.idx.c.db</code></td><td>Índice primário do Favorito (Hash Extensível)</td></tr>
+                <tr><td><code>./dados/favorito_por_usuario/*.idx.{d,c}.db</code></td><td>Índice <code>usuarioId → favoritoId</code></td></tr>
+                <tr><td><code>./dados/favorito_por_alimento/*.idx.{d,c}.db</code></td><td>Índice <code>alimentoId → favoritoId</code></td></tr>
+                <tr><td><code>./dados/alimento/alimento.idx.bmais.db</code></td><td><strong>Árvore B+</strong> de alimento por nome (ordem 8)</td></tr>
+              </tbody>
+            </table>
+            <p>Todos são manipulados com <code>RandomAccessFile</code>. Os índices são <strong>reconstruídos automaticamente</strong> se forem apagados — basta varrer o arquivo de dados na inicialização.</p>
           </article>
 
         </div>

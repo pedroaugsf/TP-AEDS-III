@@ -1,15 +1,26 @@
 package app.controller;
 
+import app.dao.FavoritoDAO;
 import app.dao.UsuarioDAO;
 import app.model.Usuario;
 
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * Regras de Usuário + cascade nos favoritos quando um usuário é removido.
+ */
 public class UsuarioController {
     private final UsuarioDAO dao;
+    private final FavoritoDAO favoritoDAO;
 
-    public UsuarioController(UsuarioDAO dao) { this.dao = dao; }
+    public UsuarioController(UsuarioDAO dao, FavoritoDAO favoritoDAO) {
+        this.dao = dao;
+        this.favoritoDAO = favoritoDAO;
+    }
+
+    /** Sobrecarga para compatibilidade (Main/ConsoleApp não usam favoritos). */
+    public UsuarioController(UsuarioDAO dao) { this(dao, null); }
 
     public int criar(String nome, String email, LocalDate dataNasc, List<String> telefones) throws Exception {
         if (nome == null || nome.trim().isEmpty()) throw new IllegalArgumentException("Nome é obrigatório");
@@ -31,8 +42,10 @@ public class UsuarioController {
         return dao.update(u);
     }
 
+    /** Remoção com cascade: apaga favoritos vinculados (integridade N:N). */
     public boolean remover(int id) throws Exception {
         if (!dao.exists(id)) throw new IllegalArgumentException("Usuário id=" + id + " não existe");
+        if (favoritoDAO != null) favoritoDAO.removerPorUsuario(id);
         return dao.delete(id);
     }
 }

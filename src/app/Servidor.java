@@ -2,14 +2,17 @@ package app;
 
 import app.controller.AlimentoController;
 import app.controller.ConsumoController;
+import app.controller.FavoritoController;
 import app.controller.RefeicaoController;
 import app.controller.UsuarioController;
 import app.dao.AlimentoDAO;
 import app.dao.ConsumoDAO;
+import app.dao.FavoritoDAO;
 import app.dao.RefeicaoDAO;
 import app.dao.UsuarioDAO;
 import app.model.Alimento;
 import app.model.Consumo;
+import app.model.Favorito;
 import app.model.Refeicao;
 import app.model.Usuario;
 import com.sun.net.httpserver.HttpExchange;
@@ -31,8 +34,13 @@ import java.util.Map;
  * Servidor HTTP embutido (com.sun.net.httpserver, sem dependências externas).
  *
  *  - Serve arquivos estáticos da pasta ./web (front-end).
- *  - Expõe API REST JSON em /api/usuario, /api/alimento, /api/refeicao, /api/consumo,
- *    e /api/refeicao/{id}/consumos para o relacionamento 1:N via Hash Extensível.
+ *  - API REST JSON:
+ *      /api/usuario, /api/alimento, /api/refeicao, /api/consumo
+ *      /api/refeicao/{id}/consumos                        (1:N — Hash Extensível)
+ *      /api/favorito, /api/favorito/{id}                  (N:N — chave composta)
+ *      /api/usuario/{id}/favoritos                        (consulta lado usuário)
+ *      /api/alimento/{id}/favoritos                       (consulta lado alimento)
+ *      /api/alimento/ordenado                             (FASE III — Árvore B+)
  *
  * Para executar:  java -cp out app.Servidor
  * Front-end:      http://localhost:8080
@@ -46,29 +54,34 @@ public class Servidor {
     private static AlimentoDAO alimentoDAO;
     private static RefeicaoDAO refeicaoDAO;
     private static ConsumoDAO consumoDAO;
+    private static FavoritoDAO favoritoDAO;
 
     private static UsuarioController usuarioCtrl;
     private static AlimentoController alimentoCtrl;
     private static RefeicaoController refeicaoCtrl;
     private static ConsumoController consumoCtrl;
+    private static FavoritoController favoritoCtrl;
 
     public static void main(String[] args) throws Exception {
         usuarioDAO = new UsuarioDAO();
         alimentoDAO = new AlimentoDAO();
         refeicaoDAO = new RefeicaoDAO();
         consumoDAO = new ConsumoDAO();
+        favoritoDAO = new FavoritoDAO();
 
-        usuarioCtrl = new UsuarioController(usuarioDAO);
-        alimentoCtrl = new AlimentoController(alimentoDAO);
+        usuarioCtrl  = new UsuarioController(usuarioDAO, favoritoDAO);
+        alimentoCtrl = new AlimentoController(alimentoDAO, favoritoDAO);
         refeicaoCtrl = new RefeicaoController(refeicaoDAO, usuarioDAO, consumoDAO);
-        consumoCtrl = new ConsumoController(consumoDAO, refeicaoDAO, alimentoDAO);
+        consumoCtrl  = new ConsumoController(consumoDAO, refeicaoDAO, alimentoDAO);
+        favoritoCtrl = new FavoritoController(favoritoDAO, usuarioDAO, alimentoDAO);
 
         HttpServer server = HttpServer.create(new InetSocketAddress(PORTA), 0);
 
         server.createContext("/api/usuario", Servidor::handleUsuario);
         server.createContext("/api/alimento", Servidor::handleAlimento);
         server.createContext("/api/refeicao", Servidor::handleRefeicao);
-        server.createContext("/api/consumo", Servidor::handleConsumo);
+        server.createContext("/api/consumo",  Servidor::handleConsumo);
+        server.createContext("/api/favorito", Servidor::handleFavorito);
         server.createContext("/", Servidor::handleStatic);
 
         server.setExecutor(null);
@@ -78,6 +91,7 @@ public class Servidor {
                 alimentoDAO.close();
                 refeicaoDAO.close();
                 consumoDAO.close();
+                favoritoDAO.close();
                 System.out.println("\n[Servidor] arquivos fechados.");
             } catch (Exception ignored) {}
         }));
@@ -85,6 +99,8 @@ public class Servidor {
         server.start();
         System.out.println("[Servidor] NutriTrack rodando em http://localhost:" + PORTA);
         System.out.println("[Servidor] Diretório web/: " + WEB_DIR);
+        System.out.println("[Servidor] Índice B+ (alimento por nome): " + alimentoDAO.descricaoIndiceNome());
+        System.out.println("[Servidor] Índices N:N favoritos: " + favoritoDAO.descricaoIndices());
         System.out.println("[Servidor] Ctrl+C para encerrar.");
     }
 
@@ -130,6 +146,11 @@ public class Servidor {
                     usuarioCtrl.remover(id);
                     sendJson(ex, 200, "{\"ok\":true}");
                 } else sendError(ex, 405, "Método não permitido");
+            } else if (partes.length == 2 && partes[1].equals("favoritos")) {
+                int id = Integer.parseInt(partes[0]);
+                if (m.equals("GET")) {
+                    sendJson(ex, 200, listToJson(favoritoCtrl.listarPorUsuario(id), Servidor::favoritoToJson));
+                } else sendError(ex, 405, "Método não permitido");
             } else sendError(ex, 404, "Rota inválida");
         } catch (IllegalArgumentException iae) {
             sendError(ex, 400, iae.getMessage());
@@ -158,6 +179,11 @@ public class Servidor {
                             asListString(body.get("tags")));
                     sendJson(ex, 201, "{\"id\":" + id + "}");
                 } else sendError(ex, 405, "Método não permitido");
+            } else if (partes.length == 1 && partes[0].equals("ordenado")) {
+                // FASE III — listagem ordenada via Árvore B+ (sem sort em memória)
+                if (m.equals("GET")) {
+                    sendJson(ex, 200, listToJson(alimentoCtrl.listarOrdenado(), Servidor::alimentoToJson));
+                } else sendError(ex, 405, "Método não permitido");
             } else if (partes.length == 1) {
                 int id = Integer.parseInt(partes[0]);
                 if (m.equals("GET")) {
@@ -180,6 +206,11 @@ public class Servidor {
                 } else if (m.equals("DELETE")) {
                     alimentoCtrl.remover(id);
                     sendJson(ex, 200, "{\"ok\":true}");
+                } else sendError(ex, 405, "Método não permitido");
+            } else if (partes.length == 2 && partes[1].equals("favoritos")) {
+                int id = Integer.parseInt(partes[0]);
+                if (m.equals("GET")) {
+                    sendJson(ex, 200, listToJson(favoritoCtrl.listarPorAlimento(id), Servidor::favoritoToJson));
                 } else sendError(ex, 405, "Método não permitido");
             } else sendError(ex, 404, "Rota inválida");
         } catch (IllegalArgumentException iae) {
@@ -282,6 +313,55 @@ public class Servidor {
         }
     }
 
+    private static void handleFavorito(HttpExchange ex) throws IOException {
+        try {
+            String m = ex.getRequestMethod();
+            String[] partes = pathSegments(ex, "/api/favorito");
+
+            if (partes.length == 0) {
+                if (m.equals("GET")) {
+                    sendJson(ex, 200, listToJson(favoritoCtrl.listar(), Servidor::favoritoToJson));
+                } else if (m.equals("POST")) {
+                    Map<String, Object> body = parseJson(readBody(ex));
+                    LocalDate data = body.get("dataInclusao") != null && !body.get("dataInclusao").toString().isEmpty()
+                            ? LocalDate.parse(body.get("dataInclusao").toString())
+                            : LocalDate.now();
+                    int nota = body.get("nota") == null ? 0 : ((Number) body.get("nota")).intValue();
+                    int id = favoritoCtrl.criar(
+                            ((Number) body.get("usuarioId")).intValue(),
+                            ((Number) body.get("alimentoId")).intValue(),
+                            data, nota,
+                            (String) body.getOrDefault("observacao", ""));
+                    sendJson(ex, 201, "{\"id\":" + id + "}");
+                } else sendError(ex, 405, "Método não permitido");
+            } else if (partes.length == 1) {
+                int id = Integer.parseInt(partes[0]);
+                if (m.equals("GET")) {
+                    Favorito f = favoritoCtrl.buscar(id);
+                    if (f == null) { sendError(ex, 404, "Favorito não encontrado"); return; }
+                    sendJson(ex, 200, favoritoToJson(f));
+                } else if (m.equals("PUT")) {
+                    Favorito f = favoritoCtrl.buscar(id);
+                    if (f == null) { sendError(ex, 404, "Favorito não encontrado"); return; }
+                    Map<String, Object> body = parseJson(readBody(ex));
+                    if (body.containsKey("dataInclusao") && body.get("dataInclusao") != null && !body.get("dataInclusao").toString().isEmpty())
+                        f.setDataInclusao(LocalDate.parse(body.get("dataInclusao").toString()));
+                    if (body.containsKey("nota")) f.setNota((byte) ((Number) body.get("nota")).intValue());
+                    if (body.containsKey("observacao")) f.setObservacao((String) body.get("observacao"));
+                    favoritoCtrl.atualizar(f);
+                    sendJson(ex, 200, favoritoToJson(f));
+                } else if (m.equals("DELETE")) {
+                    favoritoCtrl.remover(id);
+                    sendJson(ex, 200, "{\"ok\":true}");
+                } else sendError(ex, 405, "Método não permitido");
+            } else sendError(ex, 404, "Rota inválida");
+        } catch (IllegalArgumentException iae) {
+            sendError(ex, 400, iae.getMessage());
+        } catch (Exception e) {
+            sendError(ex, 500, e.getMessage());
+        }
+    }
+
     // ====================================================================
     //   STATIC FILES
     // ====================================================================
@@ -361,6 +441,16 @@ public class Servidor {
                 + ",\"refeicaoId\":" + c.getRefeicaoId()
                 + ",\"alimentoId\":" + c.getAlimentoId()
                 + ",\"quantidadeGramas\":" + c.getQuantidadeGramas()
+                + "}";
+    }
+
+    private static String favoritoToJson(Favorito f) {
+        return "{\"id\":" + f.getId()
+                + ",\"usuarioId\":" + f.getUsuarioId()
+                + ",\"alimentoId\":" + f.getAlimentoId()
+                + ",\"dataInclusao\":" + jstr(f.getDataInclusao() == null ? "" : f.getDataInclusao().toString())
+                + ",\"nota\":" + f.getNota()
+                + ",\"observacao\":" + jstr(f.getObservacao())
                 + "}";
     }
 

@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <title>NutriTrack — Formulário de Projeto (Fase 2)</title>
+  <style>
+    @page { size: A4; margin: 2cm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.5; color: #000; max-width: 21cm; margin: 0 auto; padding: 1.5cm; background: #fff; }
+    .titulo { text-align: center; margin-bottom: 0.5em; }
+    .titulo h1 { font-size: 16pt; margin-bottom: 0.3em; }
+    .titulo .subtitulo { font-size: 13pt; font-style: italic; margin-bottom: 0.8em; }
+    .autores { text-align: center; font-size: 11pt; margin-bottom: 1.5em; }
+    .autores p { margin: 0.1em 0; }
+    h2 { font-size: 14pt; margin-top: 1.5em; margin-bottom: 0.5em; page-break-after: avoid; }
+    h3 { font-size: 12pt; margin-top: 1em; margin-bottom: 0.3em; page-break-after: avoid; color: #1a3d6b; }
+    p, li { text-align: justify; margin-bottom: 0.5em; }
+    ul, ol { margin-left: 2em; margin-bottom: 0.8em; }
+    table { width: 100%; border-collapse: collapse; margin: 0.8em 0; font-size: 11pt; page-break-inside: avoid; }
+    th, td { border: 1px solid #333; padding: 4px 8px; text-align: left; vertical-align: top; }
+    th { background: #eee; font-weight: bold; }
+    code { font-family: 'Courier New', monospace; font-size: 10pt; background: #f4f4f4; padding: 1px 4px; border-radius: 3px; }
+    pre { background: #f4f4f4; padding: 10px; border-radius: 4px; font-size: 9.5pt; margin: 0.5em 0 1em; white-space: pre-wrap; word-wrap: break-word; page-break-inside: avoid; }
+    .pergunta { background: #f0f4f8; border-left: 4px solid #1a3d6b; padding: 8px 12px; margin: 1em 0 0.3em; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<div class="titulo">
+  <h1>Formulário de Projeto — Fase 2</h1>
+  <p class="subtitulo">NutriTrack — Sistema de Gerenciamento de Consumo Nutricional</p>
+</div>
+
+<div class="autores">
+  <p><strong>Componentes do Grupo:</strong></p>
+  <p>Pedro Augusto Silva Ferreira, Luis Felipe Almeida Rodrigues</p>
+  <p>Pontifícia Universidade Católica de Minas Gerais — ICEI</p>
+  <p>Algoritmos e Estruturas de Dados III — 2026</p>
+</div>
+
+<h2>Respostas Completas ao Formulário</h2>
+
+<div class="pergunta">a) Estrutura usada para representar os registros</div>
+<p>
+  Cada registro implementa a interface <code>app.Registro</code>, que define os métodos
+  <code>getId()</code>, <code>setId(int)</code>, <code>toByteArray()</code> e
+  <code>fromByteArray(byte[])</code>. A serialização usa <code>DataOutputStream</code>
+  sobre <code>ByteArrayOutputStream</code>, gerando um <code>byte[]</code> de tamanho variável
+  por registro.
+</p>
+<p>No arquivo <code>.db</code>, cada registro é gravado no formato:</p>
+<pre><code>[lápide : 1 byte] [tamanho : short / 2 bytes] [dados : byte[tamanho]]</code></pre>
+<p>antecedido pelo cabeçalho global do arquivo:</p>
+<pre><code>[últimoId : int / 4 bytes] [ponteiroListaRemovidos : long / 8 bytes]</code></pre>
+<p>
+  As classes de domínio (<code>Usuario</code>, <code>Alimento</code>, <code>Refeicao</code>,
+  <code>Consumo</code>) escrevem seus campos em ordem fixa: tipos primitivos via
+  <code>writeInt/writeFloat/writeLong</code>, strings via <code>writeUTF</code> e datas via
+  <code>writeLong(epochDay)</code>.
+</p>
+
+<div class="pergunta">b) Como atributos multivalorados do tipo string foram tratados</div>
+<p>
+  As listas de strings (<code>Usuario.telefones</code> e <code>Alimento.tags</code>) são
+  serializadas em sequência usando um cabeçalho de quantidade:
+</p>
+<pre><code>[short qtd] [writeUTF s_1] [writeUTF s_2] ... [writeUTF s_qtd]</code></pre>
+<p>
+  Na leitura, o método <code>fromByteArray</code> chama <code>readShort()</code> para
+  obter a quantidade e itera chamando <code>readUTF()</code>, recompondo o
+  <code>List&lt;String&gt;</code> original. Isso permite tamanho variável sem desperdício de espaço.
+</p>
+
+<div class="pergunta">c) Como foi implementada a exclusão lógica</div>
+<p>
+  Cada registro carrega 1 byte de <strong>lápide</strong>: <code>' '</code> (0x20) indica
+  ativo e <code>'*'</code> (0x2A) indica removido. A operação <code>delete(id)</code> faz:
+</p>
+<ol>
+  <li>Localiza o endereço do registro pelo índice primário (Hash Extensível) — O(1) médio.</li>
+  <li>Sobrescreve o byte da lápide com <code>'*'</code>.</li>
+  <li>Insere o endereço na <strong>lista encadeada de espaços livres</strong>, ordenada por tamanho (best-fit).</li>
+  <li>Remove a entrada (id → endereço) do índice primário.</li>
+  <li>Se for um <code>Consumo</code>, remove também a entrada (refeicaoId → consumoId) do índice 1:N.</li>
+</ol>
+<p>
+  Em uma inserção/atualização que precise de mais espaço, o método <code>getDeleted(tam)</code>
+  percorre a lista buscando o primeiro nó com tamanho suficiente. Caso não encontre, o registro
+  é gravado no fim do arquivo.
+</p>
+
+<div class="pergunta">d) Além das PKs, quais outras chaves foram utilizadas</div>
+<p>Além das chaves primárias auto-incrementadas, o sistema utiliza três chaves estrangeiras:</p>
+<ul>
+  <li><strong>FK</strong> <code>Refeicao.usuarioId → Usuario.id</code> — validada na inserção/atualização.</li>
+  <li><strong>FK</strong> <code>Consumo.refeicaoId → Refeicao.id</code> — usada como chave do índice 1:N (Refeição → Consumos).</li>
+  <li><strong>FK</strong> <code>Consumo.alimentoId → Alimento.id</code> — validada para integridade referencial.</li>
+</ul>
+<p>
+  A chave <code>refeicaoId</code> é especialmente importante porque, além de validada como FK,
+  serve como <strong>chave de busca</strong> no índice 1:N que retorna todos os consumos de uma refeição.
+</p>
+
+<div class="pergunta">e) Como a estrutura (hash) foi implementada para cada chave de pesquisa</div>
+<p>
+  A classe <code>HashExtensivel&lt;T extends RegistroHashExtensivel&lt;T&gt;&gt;</code> é
+  totalmente genérica. Cada índice é instanciado com um número fixo de slots por cesto e
+  um <code>Constructor&lt;T&gt;</code> para reconstruir entradas a partir de bytes.
+</p>
+<p>
+  O hash usa os <em>profundidadeGlobal</em> bits menos significativos de
+  <code>hashCode()</code> para indexar o diretório:
+  <code>idx = hashCode &amp; ((1 &lt;&lt; profGlobal) − 1)</code>. Quando um cesto enche,
+  ocorre <strong>split</strong>: a profundidade local é incrementada, um novo cesto é alocado
+  no fim do arquivo de cestos, os ponteiros do diretório são reescritos e os elementos são
+  redistribuídos. Se a profundidade local ultrapassa a global, o diretório é dobrado.
+</p>
+<p>
+  O método <code>read(chave)</code> retorna <strong>todos</strong> os elementos do cesto cuja
+  chave bate com a buscada — fundamental para o índice 1:N onde várias entradas compartilham
+  a mesma FK.
+</p>
+<table>
+  <tr><th>Índice</th><th>Tipo de entrada</th><th>Chave (hashCode)</th><th>Slots/cesto</th></tr>
+  <tr><td>Primário (cada uma das 4 tabelas)</td><td><code>ParIDEndereco</code> (12 B)</td><td><code>id</code></td><td>8</td></tr>
+  <tr><td>1:N — Refeicao → Consumo</td><td><code>ParIDID</code> (8 B)</td><td><code>refeicaoId</code></td><td>16</td></tr>
+</table>
+
+<div class="pergunta">f) Como foi implementado o relacionamento 1:N</div>
+<p>
+  O relacionamento <strong>Refeição → Consumos</strong> é implementado por um Hash Extensível
+  dedicado (<code>consumo_por_refeicao</code>) cujas entradas são pares
+  <code>ParIDID(FK = refeicaoId, PK = consumoId)</code>. Para cada consumo criado, o
+  <code>ConsumoDAO</code> insere uma entrada nesse índice.
+</p>
+<p>A consulta <code>ConsumoDAO.listarPorRefeicao(refId)</code> executa:</p>
+<ol>
+  <li><code>HashExtensivel&lt;ParIDID&gt;.read(refId)</code> retorna todos os pares (refId, consumoId).</li>
+  <li>Para cada <code>consumoId</code>, chama <code>Arquivo&lt;Consumo&gt;.read(consumoId)</code>, que usa o índice primário do arquivo de consumos (também O(1) médio).</li>
+  <li>Devolve a <code>List&lt;Consumo&gt;</code>.</li>
+</ol>
+<p>A integridade referencial é mantida em três pontos:</p>
+<ul>
+  <li><strong>Criação:</strong> o controller verifica via <code>exists(id)</code> que a refeição e o alimento existem antes de gravar o consumo.</li>
+  <li><strong>Alteração de FK:</strong> ao atualizar a <code>refeicaoId</code> de um consumo, o DAO remove o par antigo e insere o novo no índice 1:N.</li>
+  <li><strong>Remoção em cascata:</strong> ao remover uma refeição, o <code>RefeicaoController</code> consulta o índice 1:N e remove todos os consumos associados (e suas entradas no índice).</li>
+</ul>
+
+<div class="pergunta">g) Como os índices são persistidos em disco</div>
+<p>Cada índice é composto por <strong>dois arquivos binários</strong>:</p>
+<table>
+  <tr><th>Arquivo</th><th>Conteúdo</th></tr>
+  <tr><td><code>{nome}.idx.d.db</code></td><td><strong>Diretório:</strong> <code>int profundidadeGlobal</code> + <code>2^profGlobal</code> ponteiros <code>long</code> para cestos.</td></tr>
+  <tr><td><code>{nome}.idx.c.db</code></td><td><strong>Cestos:</strong> sequência de cestos de tamanho fixo. Cada cesto = <code>byte profundidadeLocal</code> + <code>short qtd</code> + vetor de slots.</td></tr>
+</table>
+<p>
+  Tudo é gravado via <code>RandomAccessFile</code>. Cada operação executa <code>seek</code>
+  + <code>write</code> imediatamente, sem cache em memória. Os índices são atualizados
+  <strong>na mesma operação</strong> que altera o arquivo de dados (inserção, atualização que
+  muda endereço, remoção). O servidor fecha todos os <code>RandomAccessFile</code> via
+  <em>shutdown hook</em>, garantindo o flush.
+</p>
+<p>
+  Existe uma rotina de <strong>reconstrução automática</strong>: se o arquivo de índice está
+  vazio mas o <code>.db</code> de dados já contém registros, o índice é reconstruído na
+  inicialização varrendo o arquivo de dados — basta apagar a pasta de índices para forçar a
+  reconstrução.
+</p>
+
+<div class="pergunta">h) Estrutura do projeto no GitHub</div>
+<p>
+  O repositório está disponível em
+  <code>https://github.com/taurusluis2004/TP-AEDS-III</code> e segue o padrão MVC + DAO:
+</p>
+<pre><code>TP-AEDS-III/
+├── README.md                        # instruções de compilação e execução
+├── dados/                           # arquivos binários (.db) + índices (.idx.*)
+│   ├── usuario/         (usuario.db + índice primário)
+│   ├── alimento/        (alimento.db + índice primário)
+│   ├── refeicao/        (refeicao.db + índice primário)
+│   ├── consumo/         (consumo.db + índice primário)
+│   └── consumo_por_refeicao/        # índice 1:N (FK refeicaoId → PK consumoId)
+├── src/app/
+│   ├── Main.java                    # demo guiado (console)
+│   ├── ConsoleApp.java              # CRUD via menu (console)
+│   ├── Servidor.java                # servidor HTTP embutido (porta 8080) + REST
+│   ├── Registro.java                # interface comum
+│   ├── Arquivo.java                 # persistência genérica + integração com índice primário
+│   ├── model/
+│   │   ├── Usuario.java
+│   │   ├── Alimento.java
+│   │   ├── Refeicao.java
+│   │   └── Consumo.java
+│   ├── controller/
+│   │   ├── UsuarioController.java
+│   │   ├── AlimentoController.java
+│   │   ├── RefeicaoController.java  # remoção em cascata
+│   │   └── ConsumoController.java   # validação de FKs
+│   └── dao/
+│       ├── RegistroHashExtensivel.java   # interface
+│       ├── HashExtensivel.java           # estrutura genérica
+│       ├── ParIDEndereco.java            # entrada do índice primário
+│       ├── ParIDID.java                  # entrada do índice 1:N
+│       ├── UsuarioDAO.java
+│       ├── AlimentoDAO.java
+│       ├── RefeicaoDAO.java
+│       └── ConsumoDAO.java               # mantém o índice 1:N
+└── web/
+    ├── index.html, app.js, styles.css    # SPA que consome a API REST
+    └── documentacao.html                 # documentação completa</code></pre>
+<p>
+  O <code>README.md</code> traz instruções para compilar com <code>javac -d out</code> e
+  executar tanto o servidor (<code>java -cp out app.Servidor</code>) quanto o console
+  (<code>java -cp out app.ConsoleApp</code>).
+</p>
+
+</body>
+</html>

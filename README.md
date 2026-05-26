@@ -1,7 +1,8 @@
-# NutriTrack — TP AEDS III (Fases 1 e 2)
+# NutriTrack — TP AEDS III (Fases 1, 2 e 3)
 
 Sistema de **gerenciamento de consumo nutricional** com persistência em **arquivos
-binários** (cabeçalho + lápide + lista de espaços livres) e **índices em Hash Extensível**.
+binários** (cabeçalho + lápide + lista de espaços livres), **índices em Hash Extensível**
+e **Árvore B+** para consultas ordenadas.
 
 > Trabalho Prático — Algoritmos e Estrutura de Dados III · PUC Minas
 > Componentes do grupo: Pedro Augusto Silva Ferreira, Luis Felipe Almeida Rodrigues
@@ -26,6 +27,16 @@ binários** (cabeçalho + lápide + lista de espaços livres) e **índices em Ha
 - **Servidor HTTP embutido** (`com.sun.net.httpserver`, sem dependências externas) na porta `8080`
 - **Reconstrução automática** dos índices se os arquivos `.idx.*.db` forem apagados
 
+### Fase 3
+- **Árvore B+ genérica** implementada do zero (`app.dao.ArvoreBMais<T>`) com folhas encadeadas, ordem **8**, página de **595 bytes**
+- Persistente em `./dados/alimento/alimento.idx.bmais.db` — indexa `nome → id` do **Alimento**
+- **Consulta ordenada por nome resolvida pela B+** percorrendo as folhas encadeadas — **sem ordenação em memória** (`GET /api/alimento/ordenado`)
+- **Novo relacionamento N:N** — *Alimentos Favoritos* — entre **Usuário** e **Alimento**
+- Tabela intermediária `Favorito` com **chave primária composta** `(usuarioId, alimentoId)` validada antes da inserção
+- **Dois índices Hash Extensível bidirecionais** (`favorito_por_usuario`, `favorito_por_alimento`)
+- **Cascade**: remover Usuário/Alimento remove os favoritos vinculados e suas entradas nos dois índices
+- Front-end com novas telas: *Favoritos* (CRUD + filtros por usuário/alimento) e *Formulário Fase 3* (8 questões)
+
 ---
 
 ##  Estrutura
@@ -37,7 +48,11 @@ TP-AEDS-III/
 │   ├── alimento/alimento.db + ...
 │   ├── refeicao/refeicao.db + ...
 │   ├── consumo/consumo.db + ...
-│   └── consumo_por_refeicao/consumo_por_refeicao.idx.{d,c}.db   # índice 1:N
+│   ├── consumo_por_refeicao/consumo_por_refeicao.idx.{d,c}.db   # índice 1:N
+│   ├── favorito/favorito.db + favorito.idx.{d,c}.db             # Fase 3 — tabela N:N
+│   ├── favorito_por_usuario/...idx.{d,c}.db                     # Fase 3 — índice N:N
+│   ├── favorito_por_alimento/...idx.{d,c}.db                    # Fase 3 — índice N:N
+│   └── alimento/alimento.idx.bmais.db                           # Fase 3 — Árvore B+
 ├── src/app/
 │   ├── Servidor.java                     # servidor HTTP embutido (porta 8080)
 │   ├── Main.java                         # demo guiado (console)
@@ -50,7 +65,11 @@ TP-AEDS-III/
 │       ├── HashExtensivel.java           # estrutura genérica
 │       ├── RegistroHashExtensivel.java
 │       ├── ParIDEndereco.java            # entrada do índice primário
-│       ├── ParIDID.java                  # entrada do índice 1:N
+│       ├── ParIDID.java                  # entrada do índice 1:N e dos N:N
+│       ├── ArvoreBMais.java              # Árvore B+ genérica (Fase 3)
+│       ├── RegistroArvoreBMais.java
+│       ├── ParNomeID.java                # entrada da B+ (nome 60B + id 4B)
+│       ├── FavoritoDAO.java              # tabela N:N + 2 índices Hash (Fase 3)
 │       └── *DAO.java
 └── web/
     ├── index.html  app.js  styles.css    # SPA
