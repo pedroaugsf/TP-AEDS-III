@@ -1,0 +1,6 @@
+out/
+dados/
+.git/
+.vscode/
+*.md
+*.ps1

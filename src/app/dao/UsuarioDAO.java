@@ -4,6 +4,7 @@ import app.Arquivo;
 import app.model.Usuario;
 
 import java.lang.reflect.Constructor;
+import java.util.List;
 
 public class UsuarioDAO {
     private final Arquivo<Usuario> arq;
@@ -15,7 +16,10 @@ public class UsuarioDAO {
 
     public int create(Usuario u) throws Exception { return arq.create(u); }
     public Usuario read(int id) throws Exception { return arq.read(id); }
+    public boolean exists(int id) throws Exception { return arq.exists(id); }
     public boolean update(Usuario u) throws Exception { return arq.update(u); }
     public boolean delete(int id) throws Exception { return arq.delete(id); }
+    public List<Usuario> listar() throws Exception { return arq.listar(); }
     public void close() throws Exception { arq.close(); }
+    public String descricaoIndice() { return arq.descricaoIndice(); }
 }
