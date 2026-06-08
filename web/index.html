@@ -54,6 +54,11 @@
         <span>Favoritos</span>
         <span class="pill">N:N</span>
       </button>
+      <button class="menu-item" data-view="backup">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
+        <span>Backup &amp; Compressão</span>
+        <span class="pill">IV</span>
+      </button>
 
       <div class="menu-section">Entregas</div>
 
@@ -66,6 +71,11 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6M9 9h2"/></svg>
         <span>Formulário Fase 3</span>
         <span class="pill">B+ · N:N</span>
+      </button>
+      <button class="menu-item" data-view="formulario4">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6M9 9h2"/></svg>
+        <span>Formulário Fase 4</span>
+        <span class="pill">Huffman · LZW</span>
       </button>
 
       <a class="menu-item" href="documentacao.html" target="_blank">
@@ -664,6 +674,121 @@ offset 8+    : páginas de tamanho fixo
             <p>Todos são manipulados com <code>RandomAccessFile</code>. Os índices são <strong>reconstruídos automaticamente</strong> se forem apagados — basta varrer o arquivo de dados na inicialização.</p>
           </article>
 
+        </div>
+      </section>
+
+      <!-- ================ BACKUP / COMPRESSÃO (FASE IV) ================ -->
+      <section class="view" id="view-backup">
+        <div class="page-head">
+          <div>
+            <h1>Backup &amp; Compressão <span class="chip chip-primary">Fase 4</span></h1>
+            <p class="muted">Gera um <strong>único arquivo compactado</strong> com todos os dados do sistema usando <strong>Huffman</strong> e <strong>LZW</strong>, calculando a taxa de compressão.</p>
+          </div>
+          <div class="page-head-actions">
+            <button class="btn-ghost" id="backup-refresh">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              <span>Atualizar status</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="checklist-card card">
+          <h3>📦 Como funciona</h3>
+          <ul class="checklist">
+            <li>Todos os arquivos sob <code>./dados/</code> são reunidos em um único pacote (estilo TAR).</li>
+            <li>O pacote é comprimido inteiro por <strong>Huffman</strong> ou <strong>LZW</strong>, gerando <strong>um único arquivo</strong> de backup.</li>
+            <li>Cada geração faz uma verificação de <strong>integridade (round-trip)</strong>: descomprime e compara byte a byte com o original.</li>
+            <li>É possível <strong>baixar</strong> o arquivo compactado e <strong>restaurar</strong> em <code>./dados_restaurado/</code>.</li>
+          </ul>
+        </div>
+
+        <div class="cards-grid" id="backup-status" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin:18px 0;"></div>
+
+        <div class="qa-list" style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+          <article class="qa card">
+            <h2>🌳 Huffman</h2>
+            <p class="muted">Codificação por prefixos de comprimento variável baseada na frequência dos bytes.</p>
+            <div class="modal-actions" style="margin:10px 0;">
+              <button class="btn-primary" data-gerar="huffman">Gerar backup Huffman</button>
+              <button class="btn-ghost" data-download="huffman">Baixar</button>
+              <button class="btn-ghost" data-restaurar="huffman">Restaurar</button>
+            </div>
+            <div id="resultado-huffman"></div>
+          </article>
+
+          <article class="qa card">
+            <h2>📖 LZW</h2>
+            <p class="muted">Dicionário adaptativo (Lempel–Ziv–Welch) com códigos de 16 bits.</p>
+            <div class="modal-actions" style="margin:10px 0;">
+              <button class="btn-primary" data-gerar="lzw">Gerar backup LZW</button>
+              <button class="btn-ghost" data-download="lzw">Baixar</button>
+              <button class="btn-ghost" data-restaurar="lzw">Restaurar</button>
+            </div>
+            <div id="resultado-lzw"></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ================ FORMULÁRIO FASE 4 ================ -->
+      <section class="view" id="view-formulario4">
+        <div class="page-head">
+          <div>
+            <h1>Formulário de Projeto <span class="chip chip-primary">Fase 4</span></h1>
+            <p class="muted">Respostas oficiais às 3 questões da Fase IV (Compressão Huffman e LZW). Os valores de taxa são preenchidos ao gerar os backups na aba <strong>Backup &amp; Compressão</strong>.</p>
+          </div>
+          <div class="page-head-actions">
+            <button class="btn-ghost" onclick="window.print()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+              <span>Imprimir / PDF</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="checklist-card card">
+          <h3>✅ Checklist Fase IV</h3>
+          <ul class="checklist">
+            <li><b>Compressão obrigatória</b> sobre todos os arquivos de dados de <code>./dados/</code></li>
+            <li><b>Arquivo único compactado</b> · backup completo gerado em <code>./backups/</code></li>
+            <li><b>Compactação a nível de arquivo</b> · empacotamento (TAR) + compressão do pacote inteiro</li>
+            <li><b>Huffman</b> implementado do zero (<code>app.compression.Huffman</code>)</li>
+            <li><b>LZW</b> implementado do zero (<code>app.compression.LZW</code>)</li>
+            <li><b>Integridade preservada</b> · verificação round-trip a cada geração + restauração testável</li>
+          </ul>
+        </div>
+
+        <div class="qa-list">
+          <article class="qa card">
+            <div class="qa-marker">1</div>
+            <h2>Qual foi a taxa de compressão obtida com o algoritmo de Huffman?</h2>
+            <div id="form4-huffman">
+              <p class="muted">Clique em <strong>“Gerar backup Huffman”</strong> na aba Backup &amp; Compressão para calcular automaticamente os valores abaixo.</p>
+            </div>
+            <p><b>c) Cálculo da taxa:</b> <code>taxa = (1 − tamanhoComprimido / tamanhoOriginal) × 100</code></p>
+            <p><b>d) Interpretação:</b> O Huffman explora a <em>frequência</em> dos bytes — quanto mais repetitivos/enviesados os dados, menor a entropia e melhor a taxa. Como os arquivos <code>.db</code> contêm muitos bytes de preenchimento (lápides, espaços livres e campos fixos), há boa redundância estatística a explorar. Por ser um código de prefixo ótimo para símbolos isolados, ele atinge a entropia de ordem 0, mas não captura padrões de sequências repetidas.</p>
+          </article>
+
+          <article class="qa card">
+            <div class="qa-marker">2</div>
+            <h2>Qual foi a taxa de compressão obtida com o algoritmo de LZW?</h2>
+            <div id="form4-lzw">
+              <p class="muted">Clique em <strong>“Gerar backup LZW”</strong> na aba Backup &amp; Compressão para calcular automaticamente os valores abaixo.</p>
+            </div>
+            <p><b>c) Cálculo da taxa:</b> <code>taxa = (1 − tamanhoComprimido / tamanhoOriginal) × 100</code></p>
+            <p><b>d) Interpretação:</b> O LZW monta um <em>dicionário</em> de sequências recorrentes. Nos arquivos de dados há padrões repetidos (cabeçalhos, sequências de bytes nulos, strings comuns), que o LZW substitui por um único código. Por isso, em arquivos estruturados como os <code>.db</code>, ele tende a alcançar taxa igual ou superior à do Huffman, capturando redundância de <em>sequência</em> que o Huffman puro não enxerga.</p>
+          </article>
+
+          <article class="qa card">
+            <div class="qa-marker">3</div>
+            <h2>Quais dificuldades surgiram ao implementar Huffman e LZW e como você resolveu?</h2>
+            <ul>
+              <li><b>Empacotar tudo em um arquivo único:</b> os dados estão espalhados em várias pastas/arquivos. Resolvido com um empacotador estilo TAR (<code>Backup.empacotar</code>) que serializa caminho relativo + tamanho + conteúdo de cada arquivo num só fluxo antes de comprimir.</li>
+              <li><b>Huffman — persistir a árvore:</b> para descomprimir é preciso reconstruir exatamente a mesma árvore. Resolvido gravando a <em>tabela de frequências</em> no cabeçalho do fluxo e reconstruindo a árvore de forma determinística (fila de prioridade).</li>
+              <li><b>Huffman — empacotamento de bits:</b> os códigos têm tamanho variável e não se alinham a bytes. Resolvido com um <em>bit buffer</em> que acumula bits e descarrega de 8 em 8, preenchendo o último byte com zeros.</li>
+              <li><b>Huffman — caso de símbolo único:</b> um arquivo com um só byte distinto gera árvore de um nó. Resolvido com tratamento especial, atribuindo o código “0” e detectando a raiz-folha na descompressão.</li>
+              <li><b>LZW — sincronizar o dicionário:</b> compressor e descompressor precisam construir dicionários idênticos. Resolvido parando o crescimento exatamente no mesmo limite (65.536 entradas) e tratando o caso especial <em>KwKwK</em> (código ainda não presente no dicionário do leitor).</li>
+              <li><b>Integridade:</b> garantir que nada se perde. Resolvido com verificação <em>round-trip</em> automática (comprime → descomprime → compara byte a byte) antes de gravar o arquivo de backup.</li>
+            </ul>
+          </article>
         </div>
       </section>
 

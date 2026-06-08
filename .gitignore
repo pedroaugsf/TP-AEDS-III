@@ -1,0 +1,10 @@
+# Saída de compilação Java
+out/
+
+# Artefatos de runtime
+backups/
+dados_restaurado/
+
+# Logs e temporários
+*.log
+sources.txt

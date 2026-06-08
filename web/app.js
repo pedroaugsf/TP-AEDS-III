@@ -751,3 +751,113 @@ function renderAll() {
 }
 
 loadAll();
+
+// ====================================================================
+//  BACKUP / COMPRESSÃO (FASE IV — Huffman e LZW)
+// ====================================================================
+const fmtBytes = (n) => {
+  if (n == null || n < 0) return "—";
+  if (n < 1024) return n + " B";
+  if (n < 1024 * 1024) return (n / 1024).toFixed(2) + " KB";
+  return (n / (1024 * 1024)).toFixed(2) + " MB";
+};
+
+async function backupStatus() {
+  const box = $("#backup-status");
+  if (!box) return;
+  try {
+    const s = await api("GET", "/backup");
+    box.innerHTML = `
+      <div class="card" style="padding:16px;">
+        <div class="muted" style="font-size:.8rem;">Arquivos de origem</div>
+        <div style="font-size:1.6rem;font-weight:800;">${s.arquivosOrigem}</div>
+        <div class="muted" style="font-size:.8rem;">${fmtBytes(s.tamanhoOrigem)} em ./dados/</div>
+      </div>
+      <div class="card" style="padding:16px;">
+        <div class="muted" style="font-size:.8rem;">Backup Huffman</div>
+        <div style="font-size:1.6rem;font-weight:800;">${s.huffman.existe ? fmtBytes(s.huffman.tamanho) : "—"}</div>
+        <div class="muted" style="font-size:.8rem;">${s.huffman.existe ? "gerado" : "ainda não gerado"}</div>
+      </div>
+      <div class="card" style="padding:16px;">
+        <div class="muted" style="font-size:.8rem;">Backup LZW</div>
+        <div style="font-size:1.6rem;font-weight:800;">${s.lzw.existe ? fmtBytes(s.lzw.tamanho) : "—"}</div>
+        <div class="muted" style="font-size:.8rem;">${s.lzw.existe ? "gerado" : "ainda não gerado"}</div>
+      </div>`;
+  } catch (err) {
+    box.innerHTML = `<div class="card" style="padding:16px;">Erro: ${escapeHtml(err.message)}</div>`;
+  }
+}
+
+function renderResultadoCompressao(r) {
+  const integ = r.integridadeOk
+    ? '<span class="chip chip-primary">Integridade OK ✓</span>'
+    : '<span class="chip" style="background:#ef4444;color:#fff;">Integridade FALHOU ✗</span>';
+  return `
+    <div style="margin-top:10px;">
+      ${integ}
+      <table style="margin-top:10px;width:100%;">
+        <tbody>
+          <tr><td>Arquivos incluídos</td><td><b>${r.quantidadeArquivos}</b></td></tr>
+          <tr><td>Tamanho original (a)</td><td><b>${r.tamanhoOriginal.toLocaleString("pt-BR")} bytes</b> (${fmtBytes(r.tamanhoOriginal)})</td></tr>
+          <tr><td>Tamanho comprimido (b)</td><td><b>${r.tamanhoComprimido.toLocaleString("pt-BR")} bytes</b> (${fmtBytes(r.tamanhoComprimido)})</td></tr>
+          <tr><td>Taxa de compressão (c)</td><td><b style="color:var(--brand,#10b981);">${r.taxaCompressao}%</b></td></tr>
+          <tr><td>Razão original:comprimido</td><td><b>${r.razao} : 1</b></td></tr>
+          <tr><td>Tempo</td><td>${r.milissegundos} ms</td></tr>
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function renderForm4(algo, r) {
+  const alvo = $("#form4-" + algo);
+  if (!alvo) return;
+  alvo.innerHTML = `
+    <table style="width:100%;">
+      <tbody>
+        <tr><td><b>a)</b> Tamanho do arquivo original</td><td><b>${r.tamanhoOriginal.toLocaleString("pt-BR")} bytes</b> (${fmtBytes(r.tamanhoOriginal)})</td></tr>
+        <tr><td><b>b)</b> Tamanho do arquivo comprimido</td><td><b>${r.tamanhoComprimido.toLocaleString("pt-BR")} bytes</b> (${fmtBytes(r.tamanhoComprimido)})</td></tr>
+        <tr><td><b>c)</b> Taxa de compressão</td><td><b style="color:var(--brand,#10b981);">${r.taxaCompressao}%</b> &nbsp; (razão ${r.razao} : 1)</td></tr>
+      </tbody>
+    </table>`;
+}
+
+async function gerarBackup(algo) {
+  const btn = $(`[data-gerar="${algo}"]`);
+  const out = $("#resultado-" + algo);
+  if (btn) { btn.disabled = true; btn.textContent = "Gerando…"; }
+  try {
+    const r = await api("POST", "/backup/" + algo);
+    if (out) out.innerHTML = renderResultadoCompressao(r);
+    renderForm4(algo, r);
+    backupStatus();
+    toast(`Backup ${r.algoritmo} gerado · taxa ${r.taxaCompressao}%`, "success");
+  } catch (err) {
+    toast("Erro ao gerar backup: " + err.message, "error");
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = "Gerar backup " + (algo === "huffman" ? "Huffman" : "LZW"); }
+  }
+}
+
+async function restaurarBackup(algo) {
+  const ok = await confirmar("Restaurar backup",
+    `Os arquivos do backup ${algo.toUpperCase()} serão extraídos em ./dados_restaurado/. Continuar?`);
+  if (!ok) return;
+  try {
+    const r = await api("POST", "/backup/restaurar/" + algo);
+    toast(`${r.arquivosRestaurados} arquivo(s) restaurados em ./dados_restaurado/`, "success");
+  } catch (err) {
+    toast("Erro ao restaurar: " + err.message, "error");
+  }
+}
+
+$$("[data-gerar]").forEach(b => b.addEventListener("click", () => gerarBackup(b.dataset.gerar)));
+$$("[data-restaurar]").forEach(b => b.addEventListener("click", () => restaurarBackup(b.dataset.restaurar)));
+$$("[data-download]").forEach(b => b.addEventListener("click", () => {
+  window.location.href = "/api/backup/download/" + b.dataset.download;
+}));
+const backupRefreshBtn = $("#backup-refresh");
+if (backupRefreshBtn) backupRefreshBtn.addEventListener("click", backupStatus);
+
+// carrega o status ao abrir a aba de backup
+$$('.menu-item[data-view="backup"]').forEach(b => b.addEventListener("click", backupStatus));
+

@@ -1,5 +1,8 @@
 package app;
 
+import app.compression.Backup;
+import app.compression.CompressaoService;
+import app.compression.ResultadoCompressao;
 import app.controller.AlimentoController;
 import app.controller.ConsumoController;
 import app.controller.FavoritoController;
@@ -17,7 +20,6 @@ import app.model.Refeicao;
 import app.model.Usuario;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
-
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -83,6 +85,7 @@ public class Servidor {
         server.createContext("/api/refeicao", Servidor::handleRefeicao);
         server.createContext("/api/consumo",  Servidor::handleConsumo);
         server.createContext("/api/favorito", Servidor::handleFavorito);
+        server.createContext("/api/backup", Servidor::handleBackup);
         server.createContext("/", Servidor::handleStatic);
 
         server.setExecutor(null);
@@ -102,6 +105,7 @@ public class Servidor {
         System.out.println("[Servidor] Diretório web/: " + WEB_DIR);
         System.out.println("[Servidor] Índice B+ (alimento por nome): " + alimentoDAO.descricaoIndiceNome());
         System.out.println("[Servidor] Índices N:N favoritos: " + favoritoDAO.descricaoIndices());
+        System.out.println("[Servidor] Backup/Compressão (Fase IV): Huffman e LZW em /api/backup");
         System.out.println("[Servidor] Ctrl+C para encerrar.");
     }
 
@@ -361,6 +365,103 @@ public class Servidor {
         } catch (Exception e) {
             sendError(ex, 500, e.getMessage());
         }
+    }
+
+    // ====================================================================
+    //   BACKUP / COMPRESSÃO (FASE IV — Huffman e LZW)
+    // ====================================================================
+
+    /** Pasta onde o backup é restaurado (separada de ./dados para não conflitar com os arquivos abertos). */
+    private static final String DIR_RESTAURACAO = "./dados_restaurado";
+
+    private static void handleBackup(HttpExchange ex) throws IOException {
+        try {
+            String m = ex.getRequestMethod();
+            String[] partes = pathSegments(ex, "/api/backup");
+
+            if (partes.length == 0) {
+                if (m.equals("GET")) { sendJson(ex, 200, statusBackupJson()); return; }
+                sendError(ex, 405, "Método não permitido");
+                return;
+            }
+
+            String acao = partes[0];
+
+            if (acao.equals("download") && partes.length == 2) {
+                if (!m.equals("GET")) { sendError(ex, 405, "Método não permitido"); return; }
+                String caminho = caminhoPorAlgoritmo(partes[1]);
+                if (caminho == null) { sendError(ex, 404, "Algoritmo inválido"); return; }
+                Path arq = Paths.get(caminho);
+                if (!Files.exists(arq)) { sendError(ex, 404, "Backup ainda não gerado. Gere-o primeiro."); return; }
+                byte[] dados = Files.readAllBytes(arq);
+                ex.getResponseHeaders().set("Content-Type", "application/octet-stream");
+                ex.getResponseHeaders().set("Content-Disposition",
+                        "attachment; filename=\"" + arq.getFileName() + "\"");
+                ex.sendResponseHeaders(200, dados.length);
+                try (OutputStream os = ex.getResponseBody()) { os.write(dados); }
+                return;
+            }
+
+            if (acao.equals("restaurar") && partes.length == 2) {
+                if (!m.equals("POST")) { sendError(ex, 405, "Método não permitido"); return; }
+                String caminho = caminhoPorAlgoritmo(partes[1]);
+                if (caminho == null) { sendError(ex, 404, "Algoritmo inválido"); return; }
+                if (!Files.exists(Paths.get(caminho))) {
+                    sendError(ex, 404, "Backup ainda não gerado. Gere-o primeiro.");
+                    return;
+                }
+                int n = CompressaoService.restaurar(caminho, DIR_RESTAURACAO);
+                Path destino = Paths.get(DIR_RESTAURACAO).toAbsolutePath().normalize();
+                sendJson(ex, 200, "{\"ok\":true,\"arquivosRestaurados\":" + n
+                        + ",\"destino\":" + jstr(destino.toString()) + "}");
+                return;
+            }
+
+            if (partes.length == 1 && (acao.equals("huffman") || acao.equals("lzw"))) {
+                if (!m.equals("POST")) { sendError(ex, 405, "Método não permitido"); return; }
+                ResultadoCompressao r = acao.equals("huffman")
+                        ? CompressaoService.gerarBackupHuffman()
+                        : CompressaoService.gerarBackupLZW();
+                sendJson(ex, 200, resultadoToJson(r));
+                return;
+            }
+
+            sendError(ex, 404, "Rota inválida");
+        } catch (Exception e) {
+            sendError(ex, 500, e.getMessage());
+        }
+    }
+
+    private static String caminhoPorAlgoritmo(String algo) {
+        if (algo.equalsIgnoreCase("huffman")) return CompressaoService.ARQ_HUFFMAN;
+        if (algo.equalsIgnoreCase("lzw")) return CompressaoService.ARQ_LZW;
+        return null;
+    }
+
+    private static String statusBackupJson() throws IOException {
+        long origem = 0;
+        int qtd = 0;
+        for (Path p : Backup.listarArquivosDados()) { origem += Files.size(p); qtd++; }
+        long huff = CompressaoService.tamanhoArquivo(CompressaoService.ARQ_HUFFMAN);
+        long lzw = CompressaoService.tamanhoArquivo(CompressaoService.ARQ_LZW);
+        return "{\"arquivosOrigem\":" + qtd
+                + ",\"tamanhoOrigem\":" + origem
+                + ",\"huffman\":{\"existe\":" + (huff >= 0) + ",\"tamanho\":" + huff + "}"
+                + ",\"lzw\":{\"existe\":" + (lzw >= 0) + ",\"tamanho\":" + lzw + "}"
+                + "}";
+    }
+
+    private static String resultadoToJson(ResultadoCompressao r) {
+        return "{\"algoritmo\":" + jstr(r.algoritmo)
+                + ",\"arquivoGerado\":" + jstr(r.arquivoGerado)
+                + ",\"quantidadeArquivos\":" + r.quantidadeArquivos
+                + ",\"tamanhoOriginal\":" + r.tamanhoOriginal
+                + ",\"tamanhoComprimido\":" + r.tamanhoComprimido
+                + ",\"taxaCompressao\":" + String.format(java.util.Locale.US, "%.2f", r.taxaCompressao())
+                + ",\"razao\":" + String.format(java.util.Locale.US, "%.2f", r.razao())
+                + ",\"integridadeOk\":" + r.integridadeOk
+                + ",\"milissegundos\":" + r.milissegundos
+                + "}";
     }
 
     // ====================================================================

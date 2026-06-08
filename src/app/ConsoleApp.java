@@ -12,7 +12,6 @@ import app.model.Alimento;
 import app.model.Consumo;
 import app.model.Refeicao;
 import app.model.Usuario;
-
 import java.time.LocalDate;
 import java.util.*;
 
@@ -59,6 +58,7 @@ public class ConsoleApp {
                 System.out.println("2) Alimento (CRUD)");
                 System.out.println("3) Refeição (CRUD)");
                 System.out.println("4) Consumo (CRUD / vínculo Refeição x Alimento)");
+                System.out.println("5) Backup / Compressão (Huffman e LZW)");
                 System.out.println("0) Sair");
                 int op = readInt("Escolha: ");
 
@@ -74,6 +74,9 @@ public class ConsoleApp {
                         break;
                     case 4:
                         menuConsumo();
+                        break;
+                    case 5:
+                        menuBackup();
                         break;
                     case 0:
                         close();
@@ -470,6 +473,69 @@ public class ConsoleApp {
     }
 
     private String safe(String s) { return s == null ? "" : s; }
+
+    // ===== Backup / Compressão (Fase IV) =====
+    private void menuBackup() throws Exception {
+        while (true) {
+            System.out.println("\n--- Backup / Compressão (Fase IV) ---");
+            System.out.println("1) Gerar backup com Huffman");
+            System.out.println("2) Gerar backup com LZW");
+            System.out.println("3) Comparar Huffman x LZW");
+            System.out.println("4) Restaurar backup (Huffman) em ./dados_restaurado");
+            System.out.println("5) Restaurar backup (LZW) em ./dados_restaurado");
+            System.out.println("0) Voltar");
+            int op = readInt("Escolha: ");
+
+            switch (op) {
+                case 1:
+                    imprimirResultado(app.compression.CompressaoService.gerarBackupHuffman());
+                    break;
+                case 2:
+                    imprimirResultado(app.compression.CompressaoService.gerarBackupLZW());
+                    break;
+                case 3:
+                    app.compression.ResultadoCompressao h = app.compression.CompressaoService.gerarBackupHuffman();
+                    app.compression.ResultadoCompressao l = app.compression.CompressaoService.gerarBackupLZW();
+                    imprimirResultado(h);
+                    imprimirResultado(l);
+                    System.out.println("\n>>> Melhor taxa: "
+                            + (h.taxaCompressao() >= l.taxaCompressao() ? "Huffman" : "LZW"));
+                    break;
+                case 4:
+                    restaurar(app.compression.CompressaoService.ARQ_HUFFMAN);
+                    break;
+                case 5:
+                    restaurar(app.compression.CompressaoService.ARQ_LZW);
+                    break;
+                case 0:
+                    return;
+                default:
+                    System.out.println("Opção inválida.");
+                    break;
+            }
+        }
+    }
+
+    private void imprimirResultado(app.compression.ResultadoCompressao r) {
+        System.out.println("\n===== " + r.algoritmo + " =====");
+        System.out.println("Arquivos incluídos.......: " + r.quantidadeArquivos);
+        System.out.println("Tamanho original (bytes).: " + r.tamanhoOriginal);
+        System.out.println("Tamanho comprimido (bytes): " + r.tamanhoComprimido);
+        System.out.printf("Taxa de compressão........: %.2f%%%n", r.taxaCompressao());
+        System.out.printf("Razão (orig:comp).........: %.2f : 1%n", r.razao());
+        System.out.println("Integridade (round-trip)..: " + (r.integridadeOk ? "OK" : "FALHOU"));
+        System.out.println("Tempo (ms)................: " + r.milissegundos);
+        System.out.println("Arquivo gerado............: " + r.arquivoGerado);
+    }
+
+    private void restaurar(String caminho) {
+        try {
+            int n = app.compression.CompressaoService.restaurar(caminho, "./dados_restaurado");
+            System.out.println("✅ Restaurados " + n + " arquivo(s) em ./dados_restaurado");
+        } catch (Exception e) {
+            System.out.println("Erro ao restaurar (gere o backup primeiro?): " + e.getMessage());
+        }
+    }
 
     private void close() throws Exception {
         usuarioDAO.close();
