@@ -227,17 +227,17 @@ irm -Method Post http://localhost:8080/api/backup/restaurar/huffman
 > Os números abaixo são um exemplo real obtido com a base de demonstração (`seed.ps1`).
 
 **1. Taxa de compressão com Huffman**
-- **a) Tamanho original:** soma dos bytes do pacote com todos os arquivos de `./dados/` (ex.: `8.545 bytes`)
-- **b) Tamanho comprimido:** tamanho do arquivo `nutritrack_huffman.huff` (ex.: `4.951 bytes`)
-- **c) Cálculo da taxa:** `taxa = (1 − 4951 / 8545) × 100 ≈ 42,06 %`
+- **a) Tamanho original:** soma dos bytes do pacote com todos os arquivos de `./dados/` (ex.: `8.874 bytes`)
+- **b) Tamanho comprimido:** tamanho do arquivo `nutritrack_huffman.huff` (ex.: `5.073 bytes`)
+- **c) Cálculo da taxa:** `taxa = (1 − 5073 / 8874) × 100 ≈ 42,83 %`
 - **d) Interpretação:** o Huffman explora a **frequência** dos bytes. Como os arquivos `.db` têm muitos
   bytes de preenchimento (lápides, espaços livres, campos fixos), há boa redundância estatística. Ele
   atinge a entropia de ordem 0, mas não captura padrões de **sequências** repetidas.
 
 **2. Taxa de compressão com LZW**
-- **a) Tamanho original:** mesmo pacote da origem (ex.: `8.545 bytes`)
-- **b) Tamanho comprimido:** tamanho do arquivo `nutritrack_lzw.lzw` (ex.: `4.139 bytes`)
-- **c) Cálculo da taxa:** `taxa = (1 − 4139 / 8545) × 100 ≈ 51,56 %`
+- **a) Tamanho original:** mesmo pacote da origem (ex.: `8.874 bytes`)
+- **b) Tamanho comprimido:** tamanho do arquivo `nutritrack_lzw.lzw` (ex.: `4.269 bytes`)
+- **c) Cálculo da taxa:** `taxa = (1 − 4269 / 8874) × 100 ≈ 51,89 %`
 - **d) Interpretação:** o LZW monta um **dicionário** de sequências recorrentes. Em arquivos estruturados
   como os `.db` (cabeçalhos, sequências de bytes nulos, strings comuns), ele substitui sequências inteiras
   por um único código, alcançando taxa **igual ou superior** à do Huffman.

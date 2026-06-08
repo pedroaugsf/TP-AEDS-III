@@ -96,15 +96,15 @@
     </tr>
     <tr>
       <td><strong>b) Tamanho do arquivo comprimido</strong><br><span class="nota">(<code>./backups/nutritrack_huffman.huff</code>)</span></td>
-      <td><strong>5.043 bytes</strong> (~4,9 KB)</td>
+      <td><strong>5.073 bytes</strong> (~5,0 KB)</td>
     </tr>
     <tr>
       <td><strong>c) Cálculo da taxa de compressão</strong></td>
       <td>
         <code>taxa = (1 − comprimido / original) × 100</code><br>
-        <code>taxa = (1 − 5043 / 8874) × 100</code><br>
-        <strong>taxa ≈ 43,17 %</strong><br>
-        <span class="nota">Razão original:comprimido = <strong>1,76 : 1</strong></span>
+        <code>taxa = (1 − 5073 / 8874) × 100</code><br>
+        <strong>taxa ≈ 42,83 %</strong><br>
+        <span class="nota">Razão original:comprimido = <strong>1,75 : 1</strong></span>
       </td>
     </tr>
     <tr>
@@ -139,15 +139,15 @@
     </tr>
     <tr>
       <td><strong>b) Tamanho do arquivo comprimido</strong><br><span class="nota">(<code>./backups/nutritrack_lzw.lzw</code>)</span></td>
-      <td><strong>4.227 bytes</strong> (~4,1 KB)</td>
+      <td><strong>4.269 bytes</strong> (~4,2 KB)</td>
     </tr>
     <tr>
       <td><strong>c) Cálculo da taxa de compressão</strong></td>
       <td>
         <code>taxa = (1 − comprimido / original) × 100</code><br>
-        <code>taxa = (1 − 4227 / 8874) × 100</code><br>
-        <strong>taxa ≈ 52,37 %</strong><br>
-        <span class="nota">Razão original:comprimido = <strong>2,10 : 1</strong></span>
+        <code>taxa = (1 − 4269 / 8874) × 100</code><br>
+        <strong>taxa ≈ 51,89 %</strong><br>
+        <span class="nota">Razão original:comprimido = <strong>2,08 : 1</strong></span>
       </td>
     </tr>
     <tr>
@@ -158,7 +158,7 @@
         fixos, blocos de bytes nulos (campos <code>long</code> zerados), strings UTF-8 comuns e
         padrões de índice. O LZW substitui essas sequências inteiras por um único código de 16 bits,
         capturando redundâncias que o Huffman ignora por tratar cada byte de forma independente.
-        Por isso, o LZW alcançou taxa <strong>9,2 pontos percentuais superior</strong> ao Huffman
+        Por isso, o LZW alcançou taxa <strong>9,1 pontos percentuais superior</strong> ao Huffman
         neste conjunto de dados.
       </td>
     </tr>
@@ -173,12 +173,12 @@
     </thead>
     <tbody>
       <tr>
-        <td>Huffman</td><td>8.874 B</td><td>5.043 B</td>
-        <td><strong>43,17 %</strong></td><td>1,76 : 1</td><td>✓ OK</td>
+        <td>Huffman</td><td>8.874 B</td><td>5.073 B</td>
+        <td><strong>42,83 %</strong></td><td>1,75 : 1</td><td>✓ OK</td>
       </tr>
       <tr>
-        <td>LZW</td><td>8.874 B</td><td>4.227 B</td>
-        <td><strong>52,37 %</strong></td><td>2,10 : 1</td><td>✓ OK</td>
+        <td>LZW</td><td>8.874 B</td><td>4.269 B</td>
+        <td><strong>51,89 %</strong></td><td>2,08 : 1</td><td>✓ OK</td>
       </tr>
     </tbody>
   </table>
