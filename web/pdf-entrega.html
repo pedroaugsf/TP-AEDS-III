@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <title>NutriTrack — Entrega Completa Fase 4 (Documentação + Formulário Técnico)</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <style>
+    @page { size: A4; margin: 2cm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.6; color: #000; max-width: 21cm; margin: 0 auto; padding: 1.5cm; background: #fff; }
+
+    /* ---- Estrutura ---- */
+    .capa { text-align: center; padding: 3cm 1cm; page-break-after: always; }
+    .capa h1 { font-size: 18pt; margin-bottom: 0.4em; }
+    .capa .sub { font-size: 14pt; font-style: italic; margin-bottom: 1.2em; color: #1a3d6b; }
+    .capa .autores { font-size: 12pt; margin-bottom: 0.4em; }
+    .capa .inst { font-size: 11pt; color: #444; margin-bottom: 2em; }
+    .capa .github-box { display: inline-block; border: 2px solid #1a3d6b; border-radius: 6px; padding: 12px 24px; margin-top: 1em; }
+    .capa .github-box .label { font-size: 10pt; color: #555; margin-bottom: 4px; }
+    .capa .github-box a { font-size: 12pt; color: #1a3d6b; text-decoration: none; font-weight: bold; word-break: break-all; }
+
+    .secao-titulo { page-break-before: always; background: #1a3d6b; color: #fff; padding: 14px 20px; font-size: 15pt; font-weight: bold; margin-bottom: 1.2em; border-radius: 4px; }
+    .secao-titulo.primeiro { page-break-before: avoid; }
+
+    h2 { font-size: 13pt; margin-top: 1.4em; margin-bottom: 0.4em; color: #1a3d6b; border-bottom: 1px solid #c5d8f0; padding-bottom: 3px; page-break-after: avoid; }
+    h3 { font-size: 12pt; margin-top: 1em; margin-bottom: 0.3em; page-break-after: avoid; }
+    p, li { text-align: justify; margin-bottom: 0.45em; }
+    ul, ol { margin-left: 2em; margin-bottom: 0.7em; }
+    .linha { border: none; border-top: 2px solid #1a3d6b; margin: 1.4em 0; }
+
+    /* ---- Tabelas ---- */
+    table { width: 100%; border-collapse: collapse; margin: 0.8em 0; font-size: 11pt; page-break-inside: avoid; }
+    th, td { border: 1px solid #555; padding: 5px 9px; text-align: left; vertical-align: top; }
+    th { background: #d6e4f0; font-weight: bold; }
+    tr:nth-child(even) td { background: #f7faff; }
+
+    /* ---- Código ---- */
+    code { font-family: 'Courier New', monospace; font-size: 10pt; background: #f0f0f0; padding: 1px 5px; border-radius: 3px; }
+    pre  { background: #f4f4f4; border: 1px solid #ddd; padding: 12px; border-radius: 4px; font-size: 9.5pt; margin: 0.5em 0 1em; white-space: pre-wrap; word-wrap: break-word; page-break-inside: avoid; }
+
+    /* ---- Destaques ---- */
+    .destaque { background: #e6f4ea; border-left: 4px solid #2e7d32; padding: 8px 14px; margin: 0.8em 0; border-radius: 0 4px 4px 0; }
+    .destaque strong { color: #1b5e20; }
+    .nota { font-size: 10pt; color: #444; font-style: italic; }
+    .pergunta { background: #e8f0fb; border-left: 5px solid #1a3d6b; padding: 8px 14px; margin: 1.2em 0 0.3em; font-weight: bold; page-break-after: avoid; }
+
+    /* ---- Checklist ---- */
+    .checklist { list-style: none; margin-left: 0; }
+    .checklist li::before { content: "✓  "; color: #2e7d32; font-weight: bold; }
+
+    /* ---- Diagrama ---- */
+    .diagrama { text-align: center; margin: 1em 0; page-break-inside: avoid; }
+    .diagrama .mermaid { max-width: 100%; }
+    .legenda { font-size: 10pt; font-style: italic; text-align: center; color: #555; margin-top: 4px; }
+
+    /* ---- Rodapé ---- */
+    .rodape { font-size: 9pt; color: #555; text-align: center; margin-top: 2em; border-top: 1px solid #ccc; padding-top: 0.5em; }
+
+    @media print {
+      .capa { padding: 4cm 1cm; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ================================================================ -->
+<!-- CAPA -->
+<!-- ================================================================ -->
+<div class="capa">
+  <h1>NutriTrack</h1>
+  <p class="sub">Sistema de Gerenciamento de Consumo Nutricional<br>com Compressão de Dados — Fase IV</p>
+  <p class="autores"><strong>Pedro Augusto Silva Ferreira &nbsp;·&nbsp; Luis Felipe Almeida Rodrigues</strong></p>
+  <p class="inst">Pontifícia Universidade Católica de Minas Gerais<br>
+  Instituto de Ciências Exatas e Informática<br>
+  Algoritmos e Estruturas de Dados III — 2026</p>
+
+  <hr class="linha" style="margin:2em auto;width:60%;">
+
+  <div class="github-box">
+    <div class="label">Repositório GitHub</div>
+    <a href="https://github.com/taurusluis2004/TP-AEDS-III" target="_blank">
+      https://github.com/taurusluis2004/TP-AEDS-III
+    </a>
+  </div>
+
+  <p style="margin-top:3em;font-size:11pt;color:#555;">
+    Este documento contém:<br>
+    (1) Instruções de compilação e execução &nbsp;·&nbsp;
+    (2) Documentação técnica completa (Fases 1–4) &nbsp;·&nbsp;
+    (3) Formulário técnico da Fase IV
+  </p>
+</div>
+
+<!-- ================================================================ -->
+<!-- PARTE 1: COMPILAÇÃO E EXECUÇÃO -->
+<!-- ================================================================ -->
+<div class="secao-titulo primeiro">Parte 1 — Instruções de Compilação e Execução</div>
+
+<h2>Pré-requisitos</h2>
+<ul>
+  <li><strong>JDK 17+</strong> (testado com OpenJDK 21) instalado e no <code>PATH</code></li>
+  <li>Sem dependências externas — todo o servidor HTTP é embutido via <code>com.sun.net.httpserver</code></li>
+</ul>
+
+<h2>Passo a Passo — Windows (PowerShell)</h2>
+<pre><code># 1. Entrar na pasta do projeto
+Set-Location 'caminho\para\TP-AEDS-III'
+
+# 2. Compilar (gera ./out)
+if (Test-Path out) { Remove-Item -Recurse -Force out }
+New-Item -ItemType Directory out | Out-Null
+javac -d out (Get-ChildItem -Recurse src -Filter *.java | ForEach-Object { $_.FullName })
+
+# 3a. Executar — Servidor HTTP + front-end (RECOMENDADO)
+java -cp out app.Servidor
+#    → acessar no navegador: http://localhost:8080
+
+# 3b. Executar — CRUD via menu de console
+java -cp out app.ConsoleApp
+
+# 3c. Executar — Demo guiado (cria dados de exemplo)
+java -cp out app.Main</code></pre>
+
+<h2>Passo a Passo — Linux / macOS</h2>
+<pre><code>mkdir -p out
+javac -d out $(find src -name "*.java")
+java -cp out app.Servidor   # acesse http://localhost:8080</code></pre>
+
+<h2>Gerar Backup de Compressão (Fase IV)</h2>
+<p>Com o servidor rodando, acesse a aba <strong>"Backup &amp; Compressão"</strong> no menu lateral e clique em <em>Gerar backup Huffman</em> / <em>Gerar backup LZW</em>. Os arquivos são gravados em <code>./backups/</code>.</p>
+<p>Via PowerShell (com servidor rodando em porta 8080):</p>
+<pre><code># Gerar backups
+Invoke-RestMethod -Method Post http://localhost:8080/api/backup/huffman
+Invoke-RestMethod -Method Post http://localhost:8080/api/backup/lzw
+
+# Baixar o arquivo compactado
+Invoke-RestMethod http://localhost:8080/api/backup/download/huffman -OutFile nutritrack.huff
+Invoke-RestMethod http://localhost:8080/api/backup/download/lzw     -OutFile nutritrack.lzw
+
+# Restaurar em ./dados_restaurado/
+Invoke-RestMethod -Method Post http://localhost:8080/api/backup/restaurar/huffman</code></pre>
+
+<h2>Notas Importantes</h2>
+<ul>
+  <li>A pasta <code>./dados/</code> é criada automaticamente na primeira execução.</li>
+  <li>Apagar <code>./dados/</code> reinicia o banco. Apagar apenas os <code>*.idx.*.db</code> reconstrói somente os índices.</li>
+  <li>Para popular dados de demonstração: <code>.\seed.ps1</code> (com servidor rodando).</li>
+  <li>Porta padrão: <strong>8080</strong>. Pode ser alterada via variável de ambiente: <code>$env:PORT = "9090"</code>.</li>
+</ul>
+
+<!-- ================================================================ -->
+<!-- PARTE 2: DOCUMENTAÇÃO TÉCNICA -->
+<!-- ================================================================ -->
+<div class="secao-titulo">Parte 2 — Documentação Técnica (Fases 1 a 4)</div>
+
+<h2>1. Introdução</h2>
+<p>O <strong>NutriTrack</strong> é um sistema para cadastro e gerenciamento de usuários, alimentos, refeições e registros de consumo nutricional. Construído em Java puro (sem frameworks ou banco de dados), persiste todos os dados em arquivos binários com estrutura própria de cabeçalho, lápide e reaproveitamento de espaço.</p>
+<p>O trabalho foi dividido em quatro fases: a Fase 1 implementou o CRUD completo; a Fase 2 adicionou índices em Hash Extensível; a Fase 3 introduziu Árvore B+ e relacionamento N:N; a Fase 4 implementou compressão Huffman e LZW com geração de backup único.</p>
+
+<h2>2. Entidades e Relacionamentos</h2>
+
+<div class="diagrama">
+<pre class="mermaid">
+erDiagram
+    USUARIO { int id PK; string nome; string email; date dataNascimento; string telefones }
+    ALIMENTO { int id PK; string nome; string marca; float kcalPor100g; float proteinaPor100g; float carboPor100g; float gorduraPor100g; string tags }
+    REFEICAO { int id PK; int usuarioId FK; date data; string tipo; string observacao }
+    CONSUMO { int id PK; int refeicaoId FK; int alimentoId FK; float quantidadeGramas }
+    FAVORITO { int id PK; int usuarioId FK; int alimentoId FK; date dataInclusao; byte nota; string observacao }
+    USUARIO ||--o{ REFEICAO : "realiza"
+    REFEICAO ||--o{ CONSUMO : "contém"
+    ALIMENTO ||--o{ CONSUMO : "consumido em"
+    USUARIO ||--o{ FAVORITO : "favorita"
+    ALIMENTO ||--o{ FAVORITO : "favoritado por"
+</pre>
+<p class="legenda">Figura 1 — Diagrama Entidade-Relacionamento completo (Fases 1–3).</p>
+</div>
+
+<h2>3. Arquitetura em Camadas (MVC + DAO)</h2>
+
+<div class="diagrama">
+<pre class="mermaid">
+graph TB
+    FE["web/index.html + app.js (SPA)"] --> SRV["Servidor HTTP (porta 8080)"]
+    SRV --> UC["UsuarioController"] & AC["AlimentoController"] & RC["RefeicaoController"] & CC["ConsumoController"] & FC["FavoritoController"]
+    UC --> UD["UsuarioDAO"] --> ARQ["Arquivo&lt;T&gt;"]
+    AC --> AD["AlimentoDAO"] --> ARQ
+    AD --> BMais["ArvoreBMais (nome→id)"]
+    RC --> RD["RefeicaoDAO"] --> ARQ
+    CC --> CD["ConsumoDAO"] --> ARQ
+    CD --> HX1N["HashExtensivel 1:N (refeicaoId→consumoId)"]
+    FC --> FD["FavoritoDAO"] --> ARQ
+    FD --> HXu["HashExtensivel (usuarioId→favId)"]
+    FD --> HXa["HashExtensivel (alimentoId→favId)"]
+    ARQ --> HXP["HashExtensivel (id→endereço)"]
+    ARQ --> DB["arquivos .db"]
+</pre>
+<p class="legenda">Figura 2 — Arquitetura em camadas com todos os índices.</p>
+</div>
+
+<h2>4. Estrutura do Arquivo Binário</h2>
+<table>
+  <thead><tr><th>Parte</th><th>Tipo</th><th>Bytes</th><th>Descrição</th></tr></thead>
+  <tbody>
+    <tr><td>Cabeçalho — último ID</td><td><code>int</code></td><td>4</td><td>Auto-incremento. Nunca reutiliza IDs removidos.</td></tr>
+    <tr><td>Cabeçalho — ponteiro livre</td><td><code>long</code></td><td>8</td><td>Cabeça da lista encadeada de espaços removidos. <code>-1</code> = vazia.</td></tr>
+    <tr><td>Lápide</td><td><code>byte</code></td><td>1</td><td><code>' '</code> = ativo · <code>'*'</code> = removido.</td></tr>
+    <tr><td>Tamanho</td><td><code>short</code></td><td>2</td><td>Tamanho dos dados serializados.</td></tr>
+    <tr><td>Dados</td><td><code>byte[]</code></td><td>variável</td><td>Objeto serializado via <code>DataOutputStream</code>.</td></tr>
+  </tbody>
+</table>
+<p>Reaproveitamento de espaço usa estratégia <strong>best-fit</strong>: ao remover, o espaço entra em lista ordenada por tamanho; ao inserir/atualizar, busca-se o menor espaço que caiba os dados.</p>
+
+<h2>5. Fase 2 — Hash Extensível</h2>
+<p>Dois tipos de índice foram implementados:</p>
+<ul>
+  <li><strong>Índice primário</strong> (<code>ParIDEndereco</code>): mapeia <code>id → endereço no .db</code> para cada tabela. Operações de leitura/atualização/remoção passam a fazer O(1) médio.</li>
+  <li><strong>Índice 1:N</strong> (<code>ParIDID</code>): mapeia <code>refeicaoId → consumoId</code>. Permite listar todos os consumos de uma refeição e viabiliza o cascade delete.</li>
+</ul>
+<table>
+  <thead><tr><th>Arquivo</th><th>Conteúdo</th></tr></thead>
+  <tbody>
+    <tr><td><code>{nome}.idx.d.db</code></td><td>Diretório: profundidade global + <code>2^prof</code> ponteiros <code>long</code></td></tr>
+    <tr><td><code>{nome}.idx.c.db</code></td><td>Cestos: profundidade local + quantidade + slots de tamanho fixo</td></tr>
+  </tbody>
+</table>
+<p>Os índices são <strong>reconstruídos automaticamente</strong> na inicialização se os arquivos <code>.idx.*.db</code> estiverem ausentes.</p>
+
+<h2>6. Fase 3 — Árvore B+ e Relacionamento N:N</h2>
+
+<h3>6.1 Árvore B+ Genérica</h3>
+<p>Implementada do zero em <code>app.dao.ArvoreBMais&lt;T&gt;</code> com folhas encadeadas, ordem <strong>8</strong> e página de <strong>595 bytes</strong>. Indexa <code>nome → id</code> do Alimento em <code>./dados/alimento/alimento.idx.bmais.db</code>.</p>
+<p>A consulta <code>GET /api/alimento/ordenado</code> percorre a lista encadeada de folhas em ordem crescente de chave — <strong>sem ordenação em memória</strong>.</p>
+
+<h3>6.2 Relacionamento N:N — Favoritos</h3>
+<p>Tabela intermediária <code>Favorito</code> com unicidade do par <code>(usuarioId, alimentoId)</code> verificada antes de cada inserção. Dois índices Hash bidirecionais:</p>
+<table>
+  <thead><tr><th>Índice</th><th>Chave</th><th>Consulta atendida</th></tr></thead>
+  <tbody>
+    <tr><td><code>favorito_por_usuario</code></td><td><code>usuarioId</code></td><td>todos os alimentos favoritados por um usuário</td></tr>
+    <tr><td><code>favorito_por_alimento</code></td><td><code>alimentoId</code></td><td>todos os usuários que favoritaram um alimento</td></tr>
+  </tbody>
+</table>
+<p>Cascade: remover Usuário ou Alimento remove os Favoritos vinculados e limpa ambos os índices.</p>
+
+<h2>7. Fase 4 — Compressão de Dados (Huffman e LZW)</h2>
+
+<h3>7.1 Arquitetura de Backup</h3>
+<ol>
+  <li><strong>Empacotamento (TAR):</strong> <code>app.compression.Backup</code> percorre recursivamente <code>./dados/</code> e serializa cada arquivo com seu caminho relativo, tamanho e conteúdo num único <code>byte[]</code>.</li>
+  <li><strong>Compressão:</strong> o pacote é comprimido por Huffman ou LZW, gerando <strong>um único arquivo</strong> em <code>./backups/</code>. O cabeçalho do arquivo final identifica o algoritmo e o tamanho original.</li>
+  <li><strong>Verificação round-trip:</strong> antes de gravar, o serviço comprime → descomprime → compara byte a byte via <code>Arrays.equals()</code>.</li>
+</ol>
+
+<h3>7.2 Huffman</h3>
+<p>Codificação por prefixos de comprimento variável. A tabela de frequências dos 256 bytes possíveis é gravada no cabeçalho do fluxo, permitindo reconstrução determinística da árvore na descompressão. Casos tratados: arquivo vazio, símbolo único (código "0"), bit-packing com padding no último byte.</p>
+
+<h3>7.3 LZW</h3>
+<p>Dicionário adaptativo com códigos de <strong>16 bits</strong>, iniciando com 256 entradas de byte único. Para de crescer em 65.536 entradas. Compressor e descompressor param no mesmo ponto, garantindo sincronismo. Caso especial <em>KwKwK</em> tratado explicitamente.</p>
+
+<h3>7.4 Resultados medidos</h3>
+<div class="destaque">
+  <strong>Base de medição:</strong> 22 arquivos em <code>./dados/</code> — 5 usuários, 10 alimentos, 6 refeições, 15 consumos, 10 favoritos e todos os índices (Hash Extensível + B+).
+</div>
+<table>
+  <thead><tr><th>Algoritmo</th><th>Tamanho original</th><th>Tamanho comprimido</th><th>Taxa</th><th>Razão</th><th>Integridade</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Huffman</strong></td><td>8.874 bytes</td><td>5.073 bytes</td><td><strong>42,83 %</strong></td><td>1,75 : 1</td><td>✓ OK</td></tr>
+    <tr><td><strong>LZW</strong></td><td>8.874 bytes</td><td>4.269 bytes</td><td><strong>51,89 %</strong></td><td>2,08 : 1</td><td>✓ OK</td></tr>
+  </tbody>
+</table>
+
+<h2>8. Organização do Projeto</h2>
+<pre><code>TP-AEDS-III/
+├── dados/                                # gerado em runtime
+│   ├── usuario/   usuario.db + usuario.idx.{d,c}.db
+│   ├── alimento/  alimento.db + índice primário + alimento.idx.bmais.db (B+)
+│   ├── refeicao/  refeicao.db + índice primário
+│   ├── consumo/   consumo.db + índice primário
+│   ├── consumo_por_refeicao/  índice 1:N FK→PK
+│   ├── favorito/  favorito.db + índice primário
+│   ├── favorito_por_usuario/  índice N:N usuarioId→favId
+│   └── favorito_por_alimento/ índice N:N alimentoId→favId
+├── src/app/
+│   ├── Servidor.java          # servidor HTTP embutido (porta 8080)
+│   ├── ConsoleApp.java        # CRUD via menu de console
+│   ├── Main.java              # demo guiado
+│   ├── Arquivo.java           # persistência genérica + índice primário
+│   ├── Registro.java          # interface de serialização
+│   ├── model/                 # Usuario, Alimento, Refeicao, Consumo, Favorito
+│   ├── controller/            # validações, FKs, cascade
+│   ├── dao/                   # *DAO, HashExtensivel, ArvoreBMais, Par*
+│   └── compression/           # Huffman, LZW, Backup, CompressaoService
+├── backups/                   # gerado em runtime (arquivos .huff e .lzw)
+├── web/
+│   ├── index.html             # SPA principal
+│   ├── app.js                 # lógica front-end
+│   ├── styles.css             # estilos
+│   ├── documentacao.html      # documentação interativa completa
+│   └── pdf-entrega.html       # este documento (entrega unificada)
+├── Dockerfile
+├── render.yaml
+├── seed.ps1                   # script de dados de demonstração
+└── README.md</code></pre>
+
+<h2>9. API REST — Referência Completa</h2>
+<table>
+  <thead><tr><th>Método</th><th>Rota</th><th>Descrição</th></tr></thead>
+  <tbody>
+    <tr><td>GET / POST</td><td><code>/api/usuario</code></td><td>Listar / criar usuários</td></tr>
+    <tr><td>GET / PUT / DELETE</td><td><code>/api/usuario/{id}</code></td><td>CRUD por ID; DELETE faz cascade nos favoritos</td></tr>
+    <tr><td>GET / POST</td><td><code>/api/alimento</code></td><td>Listar / criar alimentos</td></tr>
+    <tr><td>GET</td><td><code>/api/alimento/ordenado</code></td><td>Listagem ordenada por nome via Árvore B+</td></tr>
+    <tr><td>GET / PUT / DELETE</td><td><code>/api/alimento/{id}</code></td><td>CRUD por ID; DELETE faz cascade nos favoritos</td></tr>
+    <tr><td>GET / POST</td><td><code>/api/refeicao</code></td><td>Listar / criar (valida FK usuarioId)</td></tr>
+    <tr><td>GET / PUT / DELETE</td><td><code>/api/refeicao/{id}</code></td><td>CRUD por ID; DELETE faz cascade nos consumos</td></tr>
+    <tr><td>GET</td><td><code>/api/refeicao/{id}/consumos</code></td><td>Consumos de uma refeição via índice 1:N</td></tr>
+    <tr><td>GET / POST</td><td><code>/api/consumo</code></td><td>Listar / criar (valida FKs)</td></tr>
+    <tr><td>GET / PUT / DELETE</td><td><code>/api/consumo/{id}</code></td><td>CRUD por ID</td></tr>
+    <tr><td>GET / POST</td><td><code>/api/favorito</code></td><td>Listar / criar (valida FKs + unicidade)</td></tr>
+    <tr><td>GET / PUT / DELETE</td><td><code>/api/favorito/{id}</code></td><td>CRUD por ID</td></tr>
+    <tr><td>GET</td><td><code>/api/usuario/{id}/favoritos</code></td><td>Favoritos de um usuário</td></tr>
+    <tr><td>GET</td><td><code>/api/alimento/{id}/favoritos</code></td><td>Usuários que favoritaram um alimento</td></tr>
+    <tr><td>GET</td><td><code>/api/backup</code></td><td>Status dos backups (tamanhos)</td></tr>
+    <tr><td>POST</td><td><code>/api/backup/huffman</code></td><td>Gera backup compactado com Huffman</td></tr>
+    <tr><td>POST</td><td><code>/api/backup/lzw</code></td><td>Gera backup compactado com LZW</td></tr>
+    <tr><td>GET</td><td><code>/api/backup/download/{algo}</code></td><td>Baixa o arquivo único compactado</td></tr>
+    <tr><td>POST</td><td><code>/api/backup/restaurar/{algo}</code></td><td>Restaura em <code>./dados_restaurado/</code></td></tr>
+  </tbody>
+</table>
+
+<h2>10. Referências</h2>
+<ol>
+  <li>ZIVIANI, N. <em>Projeto de Algoritmos com Implementações em Java e C++</em>. 3ª ed. Cengage Learning, 2010.</li>
+  <li>CORMEN, T. H. et al. <em>Introduction to Algorithms</em>. 4th ed. MIT Press, 2022.</li>
+  <li>FAGIN, R. et al. <em>Extendible Hashing — A Fast Access Method for Dynamic Files</em>. ACM TODS, 1979.</li>
+  <li>HUFFMAN, D. A. <em>A Method for the Construction of Minimum-Redundancy Codes</em>. Proc. IRE, 1952.</li>
+  <li>WELCH, T. A. <em>A Technique for High-Performance Data Compression</em>. IEEE Computer, 1984.</li>
+  <li>Oracle. <em>Java SE Documentation</em>. Disponível em: https://docs.oracle.com/en/java/. Acesso em: jun. 2026.</li>
+</ol>
+
+<!-- ================================================================ -->
+<!-- PARTE 3: FORMULÁRIO TÉCNICO -->
+<!-- ================================================================ -->
+<div class="secao-titulo">Parte 3 — Formulário Técnico da Fase IV</div>
+
+<p>Formulário exigido pelo enunciado da Fase IV — Compressão de Dados.</p>
+
+<div class="destaque" style="margin-bottom:1.2em;">
+  <strong>Checklist de Requisitos Atendidos:</strong>
+  <ul class="checklist" style="margin-top:6px;">
+    <li>Compressão obrigatória sobre <strong>todos</strong> os arquivos de dados de <code>./dados/</code></li>
+    <li>Resultado em <strong>arquivo único compactado</strong> — funciona como backup completo</li>
+    <li>Compactação <strong>exclusivamente a nível de arquivo</strong> (sem bibliotecas externas de compressão)</li>
+    <li>Algoritmo <strong>Huffman</strong> implementado do zero em <code>app.compression.Huffman</code></li>
+    <li>Algoritmo <strong>LZW</strong> implementado do zero em <code>app.compression.LZW</code></li>
+    <li>Verificação de integridade automática: comprimir → descomprimir → comparar byte a byte</li>
+  </ul>
+</div>
+
+<!-- Q1 -->
+<div class="pergunta">Questão 1 — Qual foi a taxa de compressão obtida com o algoritmo de Huffman?</div>
+
+<table>
+  <thead><tr><th>Item</th><th>Valor</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>a) Tamanho do arquivo original</strong><br>
+        <span class="nota">Pacote TAR com os 22 arquivos de <code>./dados/</code></span></td>
+      <td><strong>8.874 bytes</strong> (~8,7 KB)</td>
+    </tr>
+    <tr>
+      <td><strong>b) Tamanho do arquivo comprimido</strong><br>
+        <span class="nota"><code>./backups/nutritrack_huffman.huff</code></span></td>
+      <td><strong>5.073 bytes</strong> (~5,0 KB)</td>
+    </tr>
+    <tr>
+      <td><strong>c) Cálculo da taxa</strong></td>
+      <td>
+        <code>taxa = (1 − comprimido / original) × 100</code><br>
+        <code>taxa = (1 − 5073 / 8874) × 100</code><br>
+        <strong style="color:#1b5e20;font-size:13pt;">taxa ≈ 42,83 %</strong><br>
+        <span class="nota">Razão original : comprimido = 1,75 : 1</span>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>d) Interpretação do resultado</strong></td>
+      <td>
+        O Huffman atribui códigos de tamanho variável inversamente proporcionais à frequência de cada
+        byte (símbolo mais frequente = código mais curto). Os arquivos <code>.db</code> do sistema
+        possuem alta redundância estatística: bytes de preenchimento (<code>0x20</code> = lápide ativa),
+        zeros de padding em campos <code>long</code> e sequências de índice se repetem muito. Por isso
+        a distribuição de frequências é enviesada, favorecendo o Huffman. Ele atinge a
+        <em>entropia de ordem 0</em>, mas não enxerga redundância de <em>sequências</em> — razão
+        pela qual o LZW superou-o neste conjunto de dados.
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- Q2 -->
+<div class="pergunta">Questão 2 — Qual foi a taxa de compressão obtida com o algoritmo de LZW?</div>
+
+<table>
+  <thead><tr><th>Item</th><th>Valor</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>a) Tamanho do arquivo original</strong><br>
+        <span class="nota">Mesmo pacote TAR (22 arquivos de <code>./dados/</code>)</span></td>
+      <td><strong>8.874 bytes</strong> (~8,7 KB)</td>
+    </tr>
+    <tr>
+      <td><strong>b) Tamanho do arquivo comprimido</strong><br>
+        <span class="nota"><code>./backups/nutritrack_lzw.lzw</code></span></td>
+      <td><strong>4.269 bytes</strong> (~4,2 KB)</td>
+    </tr>
+    <tr>
+      <td><strong>c) Cálculo da taxa</strong></td>
+      <td>
+        <code>taxa = (1 − comprimido / original) × 100</code><br>
+        <code>taxa = (1 − 4269 / 8874) × 100</code><br>
+        <strong style="color:#1b5e20;font-size:13pt;">taxa ≈ 51,89 %</strong><br>
+        <span class="nota">Razão original : comprimido = 2,08 : 1</span>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>d) Interpretação do resultado</strong></td>
+      <td>
+        O LZW constrói um dicionário de <em>sequências</em> recorrentes em tempo de execução.
+        Os arquivos <code>.db</code> contêm padrões estruturais repetidos: cabeçalhos fixos de
+        12 bytes, blocos de zeros (campos <code>long</code> não usados), strings UTF-8 comuns
+        e sequências de ponteiros de índice. O LZW substitui essas sequências inteiras por um
+        único código de 16 bits, capturando redundância de <em>contexto</em> que o Huffman
+        não enxerga. Por isso o LZW alcançou uma taxa
+        <strong>9,06 pontos percentuais superior</strong> ao Huffman neste conjunto de dados.
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="destaque" style="margin:1em 0;">
+  <strong>Comparativo direto:</strong>
+  <table style="margin-top:8px;">
+    <thead><tr><th>Algoritmo</th><th>Original</th><th>Comprimido</th><th>Taxa</th><th>Razão</th><th>Integridade</th></tr></thead>
+    <tbody>
+      <tr><td>Huffman</td><td>8.874 B</td><td>5.073 B</td><td><strong>42,83 %</strong></td><td>1,75 : 1</td><td>✓ OK</td></tr>
+      <tr><td>LZW</td><td>8.874 B</td><td>4.269 B</td><td><strong>51,89 %</strong></td><td>2,08 : 1</td><td>✓ OK</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Q3 -->
+<div class="pergunta">Questão 3 — Quais dificuldades surgiram ao implementar Huffman e LZW e como foram resolvidas?</div>
+
+<h3>3.1 — Gerar um único arquivo compactado a partir de múltiplos arquivos</h3>
+<p><strong>Problema:</strong> os dados estão distribuídos em várias pastas e arquivos de <code>./dados/</code>. O requisito exige <em>um único arquivo compactado</em>.</p>
+<p><strong>Solução:</strong> implementado o empacotador <code>app.compression.Backup</code> (estilo TAR), que percorre recursivamente <code>./dados/</code> e serializa cada arquivo no formato:</p>
+<pre><code>[assinatura "NTBKP1": 6 bytes]  [qtd arquivos: int]
+para cada arquivo:
+  [tamanho do nome: short]  [nome relativo UTF-8]  [tamanho do conteúdo: long]  [bytes do arquivo]</code></pre>
+<p>O pacote resultante é então comprimido inteiramente. A restauração reconstrói a árvore de diretórios com proteção contra <em>path traversal</em> (verifica que o destino final não sai da pasta raiz).</p>
+
+<h3>3.2 — Huffman: persistir a árvore de decodificação</h3>
+<p><strong>Problema:</strong> para descomprimir é necessário reconstruir exatamente a mesma árvore de Huffman usada na compressão.</p>
+<p><strong>Solução:</strong> em vez de serializar a estrutura da árvore, o cabeçalho do fluxo grava a <em>tabela de frequências</em> (pares <code>[byte símbolo, long frequência]</code>). Na descompressão, a fila de prioridade reconstrói a árvore de forma determinística — mesma tabela de frequências → mesma árvore.</p>
+
+<h3>3.3 — Huffman: empacotamento de bits (bit-packing)</h3>
+<p><strong>Problema:</strong> os códigos de Huffman têm comprimentos variáveis e não se alinham a fronteiras de byte. Gravar um código por byte eliminaria todo o ganho de compressão.</p>
+<p><strong>Solução:</strong> uso de um <em>bit buffer</em> inteiro que acumula bits e descarrega 1 byte sempre que 8 bits são preenchidos. O último byte é completado com zeros à direita (padding). O cabeçalho grava o <code>tamanhoOriginal</code> em bytes para impedir a leitura dos bits de padding na descompressão.</p>
+
+<h3>3.4 — Huffman: arquivo com um único byte distinto</h3>
+<p><strong>Problema:</strong> quando todos os bytes da entrada são iguais, a árvore tem apenas um nó (raiz = folha). A geração recursiva de códigos não consegue descer por nenhum ramo e o prefixo fica vazio.</p>
+<p><strong>Solução:</strong> se o prefixo estiver vazio ao chegar em uma folha, o código atribuído é <code>"0"</code> (um único bit). Na descompressão, quando a raiz já é folha, os bytes de saída são preenchidos diretamente com o símbolo da raiz sem percorrer nenhum ramo.</p>
+
+<h3>3.5 — LZW: sincronizar o dicionário (caso especial KwKwK)</h3>
+<p><strong>Problema:</strong> compressor e descompressor precisam construir dicionários idênticos sem transmiti-lo explicitamente. O caso especial <em>KwKwK</em> ocorre quando o descompressor recebe um código que ainda não existe no seu dicionário (o compressor o acabou de criar, mas o descompressor ainda não processou a entrada correspondente).</p>
+<p><strong>Solução:</strong> ao receber um código igual ao próximo a ser inserido no dicionário, o descompressor infere que a nova sequência é a sequência anterior mais seu próprio primeiro byte. Além disso, os dois lados param de crescer exatamente em 65.536 entradas, garantindo sincronismo total sem nenhum dado extra no fluxo.</p>
+
+<h3>3.6 — Verificação de integridade (round-trip)</h3>
+<p><strong>Problema:</strong> erros sutis de implementação (ex.: off-by-one no bit buffer, caso KwKwK mal tratado) são silenciosos — o arquivo é gerado sem exceção, mas os dados descomprimidos divergem do original.</p>
+<p><strong>Solução:</strong> o <code>CompressaoService</code> executa uma verificação <em>round-trip</em> automática <strong>antes</strong> de gravar o arquivo de backup: comprime o pacote → descomprime imediatamente → compara byte a byte com <code>Arrays.equals()</code>. O campo <code>integridadeOk</code> é retornado pela API e exibido no front-end. Ambos os algoritmos passaram em 100% dos casos de teste (entrada vazia, mono-símbolo, dados aleatórios e dados reais).</p>
+
+<!-- ================================================================ -->
+<hr class="linha" />
+<div class="rodape">
+  NutriTrack — TP AEDS III · Fase IV · PUC Minas · 2026 &nbsp;|&nbsp;
+  Pedro Augusto Silva Ferreira &amp; Luis Felipe Almeida Rodrigues &nbsp;|&nbsp;
+  github.com/taurusluis2004/TP-AEDS-III
+</div>
+
+<script>mermaid.initialize({ startOnLoad: true, theme: 'neutral' });</script>
+</body>
+</html>
